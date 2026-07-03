@@ -22,29 +22,40 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useUI } from "@/context/UIContext";
 
-const PAGES = {
+const PAGES: Record<string, { title: string; adminOnly: boolean }> = {
   "/produk": { title: "Produk", adminOnly: true },
   "/riwayat": { title: "Riwayat Transaksi", adminOnly: false },
   "/laporan": { title: "Dashboard", adminOnly: true },
   "/pengaturan": { title: "Pengaturan", adminOnly: true },
 };
 
-// Ikon topbar kanan (react-icons/fi — Feather, konsisten satu keluarga)
-const NAV_ICONS = [
+interface NavIcon {
+  href: string;
+  Icon: React.ComponentType<{ size: number }>;
+  label: string;
+  adminOnly: boolean;
+}
+
+const NAV_ICONS: NavIcon[] = [
   { href: "/riwayat", Icon: FiClock, label: "Riwayat", adminOnly: false },
   { href: "/produk", Icon: FiBox, label: "Produk", adminOnly: true },
   { href: "/laporan", Icon: FiBarChart2, label: "Dashboard", adminOnly: true },
   { href: "/pengaturan", Icon: FiSettings, label: "Pengaturan", adminOnly: true },
 ];
 
-function CategorySidebar({ collapsed, onToggle }) {
+interface CategorySidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+function CategorySidebar({ collapsed, onToggle }: CategorySidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const categories = useProductStore((s) => s.categories);
   const activeCategory = useUIStore((s) => s.activeCategory);
   const setActiveCategory = useUIStore((s) => s.setActiveCategory);
 
-  function pick(id) {
+  function pick(id: string) {
     setActiveCategory(id);
     if (pathname !== "/") router.push("/");
   }
@@ -55,7 +66,6 @@ function CategorySidebar({ collapsed, onToggle }) {
         collapsed ? "w-14" : "w-20"
       }`}
     >
-      {/* Toggle minimize/expand */}
       <button
         onClick={onToggle}
         title={collapsed ? "Perlebar menu" : "Perkecil menu"}
@@ -64,7 +74,6 @@ function CategorySidebar({ collapsed, onToggle }) {
         {collapsed ? <FiChevronsRight size={18} /> : <FiMenu size={18} />}
       </button>
 
-      {/* Kategori vertikal — di tengah secara vertikal */}
       <nav
         className={`mt-4 flex w-full flex-1 flex-col-reverse items-center justify-center gap-2 overflow-y-auto py-4 transition-opacity duration-200 ${
           collapsed ? "pointer-events-none opacity-0" : "opacity-100"
@@ -157,7 +166,6 @@ function Topbar() {
           </Link>
         )}
 
-        {/* Profil */}
         <div className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -203,7 +211,7 @@ function MobileNav() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
-  const items = [
+  const items: { href: string; label: string; Icon: React.ComponentType<{ size: number }> }[] = [
     { href: "/", label: "Kasir", Icon: FiShoppingBag },
     ...NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => ({
       href: n.href,
@@ -231,7 +239,11 @@ function MobileNav() {
   );
 }
 
-export default function AppShell({ children }) {
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { hydrated } = useUI();
@@ -239,7 +251,6 @@ export default function AppShell({ children }) {
   const storeName = useSettingsStore((s) => s.settings.storeName);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Wajib login
   useEffect(() => {
     if (hydrated && !user && pathname !== "/login") {
       router.replace("/login");
@@ -251,11 +262,9 @@ export default function AppShell({ children }) {
   if (!hydrated || !user) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-6">
-        {/* Logo mark yang "bernafas" */}
         <div className="pos-loader-mark flex h-16 w-16 items-center justify-center rounded-3xl bg-cocoa-800 text-2xl shadow-panel">
           🧾
         </div>
-        {/* Tiga titik memantul halus */}
         <div className="pos-loader" aria-label="Memuat">
           <span />
           <span />
@@ -268,13 +277,11 @@ export default function AppShell({ children }) {
     );
   }
 
-  // Halaman khusus admin
   const page = PAGES[pathname];
   const blocked = page?.adminOnly && user.role !== "admin";
 
   return (
     <div className="relative min-h-screen overflow-hidden p-3 md:p-6 lg:p-8 print:p-0">
-      {/* Bentuk dekoratif background (seperti referensi) */}
       <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-[36rem] rotate-[18deg] rounded-[4rem] bg-peach-300/50 print:hidden" />
       <div className="pointer-events-none absolute -bottom-32 -right-20 h-96 w-[32rem] -rotate-12 rounded-[4rem] bg-peach-300/40 print:hidden" />
       <div className="pointer-events-none absolute bottom-6 right-8 hidden gap-2 lg:flex print:hidden">
@@ -282,7 +289,6 @@ export default function AppShell({ children }) {
         <div className="h-14 w-3 rotate-[30deg] rounded-full bg-accent-500/70" />
       </div>
 
-      {/* Container aplikasi melayang */}
       <div className="relative mx-auto flex h-[calc(100vh-1.5rem)] max-w-[1600px] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-panel md:h-[calc(100vh-3rem)] md:rounded-[2.5rem] lg:h-[calc(100vh-4rem)] print:h-auto print:overflow-visible print:rounded-none print:shadow-none">
         <div className="flex min-h-0 flex-1">
           <CategorySidebar

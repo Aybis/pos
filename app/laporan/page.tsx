@@ -6,6 +6,7 @@ import { useTransactionStore } from "@/store/useTransactionStore";
 import { useProductStore } from "@/store/useProductStore";
 import { useUI } from "@/context/UIContext";
 import { formatRupiah, formatDateTime } from "@/lib/format";
+import { Transaction } from "@/types";
 
 const RANGES = [
   { id: "today", label: "Hari Ini", days: 1 },
@@ -16,20 +17,45 @@ const RANGES = [
 
 const DAY_LABELS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
-function startOfDay(d) {
+function startOfDay(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
 }
 
-function inWindow(t, from, to) {
+function inWindow(t: Transaction, from: Date, to: Date): boolean {
   const d = new Date(t.createdAt);
   return d >= from && d < to;
 }
 
-// Transaksi sah = bukan refund
-function isValid(t) {
+function isValid(t: Transaction): boolean {
   return t.status !== "REFUND";
+}
+
+interface WeekStat {
+  label: string;
+  total: number;
+  isToday: boolean;
+}
+
+interface Stats {
+  revenue: number;
+  count: number;
+  itemsSold: number;
+  avg: number;
+  deltaRevenue: number | null;
+  deltaCount: number | null;
+  week: WeekStat[];
+  weekMax: number;
+  top: [string, { qty: number; revenue: number }][];
+  byMethod: Record<string, number>;
+}
+
+interface Kpi {
+  label: string;
+  value: string | number;
+  delta?: number | null;
+  dark?: boolean;
 }
 
 export default function DashboardPage() {
@@ -40,11 +66,10 @@ export default function DashboardPage() {
 
   const now = new Date();
 
-  // Jendela periode terpilih + periode pembanding sebelumnya
   const { current, previous } = useMemo(() => {
     const def = RANGES.find((r) => r.id === range);
     const valid = transactions.filter(isValid);
-    if (!def.days) return { current: valid, previous: null };
+    if (!def?.days) return { current: valid, previous: null };
     const to = new Date(now.getTime() + 1);
     const from = startOfDay(new Date(now.getTime() - (def.days - 1) * 86400000));
     const prevTo = from;
@@ -53,11 +78,10 @@ export default function DashboardPage() {
       current: valid.filter((t) => inWindow(t, from, to)),
       previous: valid.filter((t) => inWindow(t, prevFrom, prevTo)),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, range]);
 
-  const stats = useMemo(() => {
-    const sum = (list) => list.reduce((s, t) => s + t.total, 0);
+  const stats: Stats = useMemo(() => {
+    const sum = (list: Transaction[]) => list.reduce((s, t) => s + t.total, 0);
     const revenue = sum(current);
     const count = current.length;
     const itemsSold = current.reduce(
@@ -66,15 +90,14 @@ export default function DashboardPage() {
     );
     const avg = count ? Math.round(revenue / count) : 0;
 
-    const delta = (cur, prev) => {
+    const delta = (cur: number, prev: number): number | null => {
       if (previous === null || prev === 0) return null;
       return Math.round(((cur - prev) / prev) * 100);
     };
     const prevRevenue = previous ? sum(previous) : 0;
     const prevCount = previous ? previous.length : 0;
 
-    // Bar chart: pendapatan 7 hari terakhir
-    const week = [...Array(7)].map((_, i) => {
+    const week: WeekStat[] = [...Array(7)].map((_, i) => {
       const day = startOfDay(new Date(now.getTime() - (6 - i) * 86400000));
       const next = new Date(day.getTime() + 86400000);
       const total = transactions
@@ -85,8 +108,7 @@ export default function DashboardPage() {
     });
     const weekMax = Math.max(...week.map((d) => d.total), 1);
 
-    // Produk terlaris (periode terpilih)
-    const byProduct = {};
+    const byProduct: Record<string, { qty: number; revenue: number }> = {};
     for (const t of current) {
       for (const it of t.items) {
         byProduct[it.name] = byProduct[it.name] || { qty: 0, revenue: 0 };
@@ -94,12 +116,11 @@ export default function DashboardPage() {
         byProduct[it.name].revenue += it.qty * it.unitPrice;
       }
     }
-    const top = Object.entries(byProduct)
+    const top: [string, { qty: number; revenue: number }][] = Object.entries(byProduct)
       .sort((a, b) => b[1].qty - a[1].qty)
       .slice(0, 5);
 
-    // Metode pembayaran
-    const byMethod = {};
+    const byMethod: Record<string, number> = {};
     for (const t of current) {
       byMethod[t.paymentMethod] = (byMethod[t.paymentMethod] || 0) + t.total;
     }
@@ -116,7 +137,6 @@ export default function DashboardPage() {
       top,
       byMethod,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, previous, transactions]);
 
   const lowStock = products.filter(
@@ -149,7 +169,7 @@ export default function DashboardPage() {
     const csv = rows
       .map((r) => r.map((c) => `"${String(c).replaceAll('"', '""')}"`).join(","))
       .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `laporan-${range}-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -158,7 +178,7 @@ export default function DashboardPage() {
     showToast("Laporan CSV terunduh");
   }
 
-  const KPIS = [
+  const KPIS: Kpi[] = [
     {
       label: "Pendapatan",
       value: formatRupiah(stats.revenue),
@@ -173,7 +193,6 @@ export default function DashboardPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl px-6 py-4 pb-10">
-        {/* Toolbar */}
         <div className="anim-fade-up flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-2">
             {RANGES.map((r) => (
@@ -199,7 +218,6 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* KPI */}
         <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {KPIS.map((k, i) => (
             <div
@@ -236,7 +254,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
-          {/* Grafik 7 hari */}
           <section
             className="anim-fade-up rounded-2xl bg-white p-5 shadow-card lg:col-span-3"
             style={{ animationDelay: "120ms" }}
@@ -280,7 +297,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Metode pembayaran */}
           <section
             className="anim-fade-up rounded-2xl bg-white p-5 shadow-card lg:col-span-2"
             style={{ animationDelay: "180ms" }}
@@ -292,7 +308,7 @@ export default function DashboardPage() {
               <div className="mt-4 space-y-4">
                 {Object.entries(stats.byMethod)
                   .sort((a, b) => b[1] - a[1])
-                  .map(([method, total], i) => {
+                  .map(([method, total]) => {
                     const pct = Math.round((total / stats.revenue) * 100);
                     return (
                       <div key={method}>
@@ -306,7 +322,7 @@ export default function DashboardPage() {
                           <div
                             style={{
                               width: `${pct}%`,
-                              animationDelay: `${250 + i * 100}ms`,
+                              animationDelay: `${250 + Object.keys(stats.byMethod).indexOf(method) * 100}ms`,
                             }}
                             className="anim-grow-right h-full rounded-full bg-accent-500"
                           />
@@ -323,7 +339,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {/* Produk terlaris */}
           <section
             className="anim-fade-up rounded-2xl bg-white p-5 shadow-card"
             style={{ animationDelay: "240ms" }}
@@ -359,7 +374,6 @@ export default function DashboardPage() {
             )}
           </section>
 
-          {/* Stok menipis */}
           <section
             className="anim-fade-up rounded-2xl bg-white p-5 shadow-card"
             style={{ animationDelay: "300ms" }}
@@ -401,7 +415,6 @@ export default function DashboardPage() {
             )}
           </section>
 
-          {/* Transaksi terakhir */}
           <section
             className="anim-fade-up rounded-2xl bg-white p-5 shadow-card"
             style={{ animationDelay: "360ms" }}
@@ -452,7 +465,11 @@ export default function DashboardPage() {
   );
 }
 
-function EmptyHint({ text }) {
+interface EmptyHintProps {
+  text: string;
+}
+
+function EmptyHint({ text }: EmptyHintProps) {
   return (
     <div className="mt-6 rounded-xl bg-cream-50 px-4 py-6 text-center text-sm text-cocoa-800/40">
       {text}

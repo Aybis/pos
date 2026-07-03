@@ -4,6 +4,27 @@ import { useEffect, useState } from "react";
 import { formatRupiah } from "@/lib/format";
 import Receipt from "./Receipt";
 
+interface PaymentModalProps {
+  totals: {
+    subtotal: number;
+    discount: number;
+    tax: number;
+    total: number;
+  };
+  onConfirm: (payment: {
+    paymentMethod: string;
+    paidAmount?: number;
+    change?: number;
+  }) => { id: string; paymentMethod: string };
+  onDone: () => void;
+  onClose: () => void;
+}
+
+interface Transaction {
+  id: string;
+  paymentMethod: string;
+}
+
 const METHODS = [
   { id: "Tunai", icon: "💵", desc: "Bayar langsung di kasir" },
   { id: "QRIS", icon: "📱", desc: "Scan QR (simulasi)" },
@@ -11,9 +32,10 @@ const METHODS = [
   { id: "E-Wallet", icon: "👛", desc: "GoPay/OVO/Dana (simulasi)" },
 ];
 
-// Pola kotak-kotak pseudo-acak untuk QR dummy (deterministik per total)
-function qrPattern(seedNumber) {
-  const cells = [];
+type Step = "method" | "cash" | "qris" | "processing" | "success";
+
+function qrPattern(seedNumber: number): boolean[] {
+  const cells: boolean[] = [];
   let seed = seedNumber || 1;
   for (let i = 0; i < 21 * 21; i++) {
     seed = (seed * 9301 + 49297) % 233280;
@@ -22,46 +44,35 @@ function qrPattern(seedNumber) {
   return cells;
 }
 
-// Alur: pilih metode → (tunai: input uang) → proses gateway dummy → sukses + struk.
-export default function PaymentModal({ totals, onConfirm, onDone, onClose }) {
-  const [step, setStep] = useState("method"); // method | cash | qris | processing | success
-  const [method, setMethod] = useState(null);
+export default function PaymentModal({ totals, onConfirm, onDone, onClose }: PaymentModalProps) {
+  const [step, setStep] = useState<Step>("method");
+  const [method, setMethod] = useState<string | null>(null);
   const [cash, setCash] = useState("");
-  const [trx, setTrx] = useState(null);
+  const [trx, setTrx] = useState<Transaction | null>(null);
 
   const cashNum = Number(cash) || 0;
   const change = cashNum - totals.total;
 
-  function pickMethod(m) {
+  function pickMethod(m: string) {
     setMethod(m);
     if (m === "Tunai") setStep("cash");
     else if (m === "QRIS") setStep("qris");
     else startProcessing(m, totals.total, 0);
   }
 
-  function startProcessing(m, paidAmount, changeAmount) {
+  function startProcessing(m: string, paidAmount: number, changeAmount: number) {
     setStep("processing");
-    // Simulasi payment gateway: delay lalu sukses
     setTimeout(() => {
-      const record = onConfirm({
-        paymentMethod: m,
-        paidAmount,
-        change: changeAmount,
-      });
+      const record = onConfirm({ paymentMethod: m, paidAmount, change: changeAmount });
       setTrx(record);
       setStep("success");
     }, 1800);
   }
 
-  // Simulasi pelanggan selesai scan QRIS
   useEffect(() => {
     if (step !== "qris") return;
-    const t = setTimeout(
-      () => startProcessing("QRIS", totals.total, 0),
-      4000
-    );
+    const t = setTimeout(() => startProcessing("QRIS", totals.total, 0), 4000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const quickCash = [totals.total, 20000, 50000, 100000].filter(
@@ -81,10 +92,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }) {
           <>
             <div className="flex items-center justify-between">
               <div className="text-lg font-bold">Pilih Pembayaran</div>
-              <button
-                onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-cream-100"
-              >
+              <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-cream-100">
                 ✕
               </button>
             </div>
@@ -118,10 +126,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }) {
           <>
             <div className="flex items-center justify-between">
               <div className="text-lg font-bold">💵 Pembayaran Tunai</div>
-              <button
-                onClick={() => setStep("method")}
-                className="text-sm text-accent-600 hover:underline"
-              >
+              <button onClick={() => setStep("method")} className="text-sm text-accent-600 hover:underline">
                 ← Kembali
               </button>
             </div>
@@ -177,10 +182,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }) {
           <>
             <div className="flex items-center justify-between">
               <div className="text-lg font-bold">📱 Scan QRIS</div>
-              <button
-                onClick={() => setStep("method")}
-                className="text-sm text-accent-600 hover:underline"
-              >
+              <button onClick={() => setStep("method")} className="text-sm text-accent-600 hover:underline">
                 ← Kembali
               </button>
             </div>
@@ -227,19 +229,13 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }) {
               </div>
             </div>
             <div className="mt-4 rounded-2xl border border-cream-200">
-              <Receipt trx={trx} />
+              <Receipt trx={trx as any} />
             </div>
             <div className="mt-4 flex gap-3 print:hidden">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 rounded-xl border border-cocoa-800 py-3 font-semibold hover:bg-cream-50"
-              >
+              <button onClick={() => window.print()} className="flex-1 rounded-xl border border-cocoa-800 py-3 font-semibold hover:bg-cream-50">
                 🖨️ Cetak Struk
               </button>
-              <button
-                onClick={onDone}
-                className="flex-1 rounded-xl bg-cocoa-800 py-3 font-semibold text-white hover:bg-cocoa-700"
-              >
+              <button onClick={onDone} className="flex-1 rounded-xl bg-cocoa-800 py-3 font-semibold text-white hover:bg-cocoa-700">
                 Transaksi Baru
               </button>
             </div>

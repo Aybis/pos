@@ -6,7 +6,19 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
 import { formatRupiah } from "@/lib/format";
 
-export default function OrderPanel({ onPay, onClose }) {
+interface Totals {
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+}
+
+interface OrderPanelProps {
+  onPay: (totals: Totals) => void;
+  onClose?: () => void;
+}
+
+export default function OrderPanel({ onPay, onClose }: OrderPanelProps) {
   const items = useCartStore((s) => s.items);
   const discount = useCartStore((s) => s.discount);
   const setQty = useCartStore((s) => s.setQty);
@@ -21,7 +33,6 @@ export default function OrderPanel({ onPay, onClose }) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header: Pesanan #xxxx + Hapus Semua (seperti referensi) */}
       <div className="flex items-center justify-between px-5 pt-5">
         <div className="text-lg font-extrabold">Pesanan #{counter + 1}</div>
         <div className="flex items-center gap-3">
@@ -44,7 +55,6 @@ export default function OrderPanel({ onPay, onClose }) {
         </div>
       </div>
 
-      {/* Daftar item */}
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {items.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-cocoa-800/40">
@@ -100,7 +110,6 @@ export default function OrderPanel({ onPay, onClose }) {
         ))}
       </div>
 
-      {/* Ringkasan (blok cream + garis putus-putus, seperti referensi) */}
       <div className="px-4 pb-4">
         <div className="rounded-2xl bg-cream-50 p-4">
           <div className="flex items-center justify-between text-sm">
@@ -114,7 +123,7 @@ export default function OrderPanel({ onPay, onClose }) {
               min="0"
               value={discount || ""}
               placeholder="0"
-              onChange={(e) => setDiscount(e.target.value)}
+              onChange={(e) => setDiscount(Number(e.target.value))}
               className="w-24 rounded-lg border border-cream-200 bg-white px-2 py-1 text-right text-sm outline-none focus:border-accent-400"
             />
           </div>

@@ -1,20 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FiShoppingCart, FiPlus } from "react-icons/fi";
+import { FiShoppingCart } from "react-icons/fi";
 import { calcUnitPrice, variantLabel, formatRupiah } from "@/lib/format";
+import { Product } from "@/types";
 
-// Kartu produk gaya referensi: area gambar + tombol keranjang oranye,
-// baris "Tambah catatan +", dan chip varian langsung di kartu.
-export default function ProductCard({ product, onAdd }) {
+interface ProductCardProps {
+  product: Product;
+  onAdd: (line: {
+    productId: string;
+    name: string;
+    emoji: string;
+    qty: number;
+    unitPrice: number;
+    selectedOptions: Record<string, string | string[]>;
+    variantText: string;
+    notes: string;
+  }) => void;
+}
+
+export default function ProductCard({ product, onAdd }: ProductCardProps) {
   const out = product.trackStock && (product.stock || 0) <= 0;
 
-  const [selected, setSelected] = useState(() => {
-    const init = {};
+  const [selected, setSelected] = useState<Record<string, string | string[]>>(() => {
+    const init: Record<string, string | string[]> = {};
     for (const g of product.variantGroups || []) {
       if (g.options.length === 0) continue;
       if (g.type === "single") init[g.id] = g.options[0].id;
-      // Grup multi wajib: mulai dengan opsi pertama terpilih
       else if (g.required) init[g.id] = [g.options[0].id];
     }
     return init;
@@ -27,14 +39,13 @@ export default function ProductCard({ product, onAdd }) {
     [product, selected]
   );
 
-  function toggle(group, optId) {
+  function toggle(group: Product["variantGroups"][0], optId: string) {
     setSelected((prev) => {
       if (group.type === "single") return { ...prev, [group.id]: optId };
-      const cur = Array.isArray(prev[group.id]) ? prev[group.id] : [];
-      const next = cur.includes(optId)
-        ? cur.filter((x) => x !== optId)
-        : [...cur, optId];
-      // Grup wajib tidak boleh kosong
+      const curArr: string[] = Array.isArray(prev[group.id]) ? prev[group.id] as string[] : [];
+      const next = curArr.includes(optId)
+        ? curArr.filter((x) => x !== optId)
+        : [...curArr, optId];
       if (group.required && next.length === 0) return prev;
       return { ...prev, [group.id]: next };
     });
@@ -62,7 +73,6 @@ export default function ProductCard({ product, onAdd }) {
         out ? "opacity-50" : ""
       }`}
     >
-      {/* Area gambar + tombol keranjang */}
       <div className="relative">
         <div className="flex h-32 items-center justify-center rounded-2xl bg-gradient-to-br from-cream-50 to-peach-100 text-6xl">
           {product.emoji || "🍽️"}
@@ -82,7 +92,6 @@ export default function ProductCard({ product, onAdd }) {
         )}
       </div>
 
-      {/* Nama + harga */}
       <div className="mt-3 flex items-baseline justify-between gap-2">
         <span className="truncate font-bold">{product.name}</span>
         <span className="whitespace-nowrap font-bold">
@@ -90,7 +99,6 @@ export default function ProductCard({ product, onAdd }) {
         </span>
       </div>
 
-      {/* Stok */}
       {product.trackStock && (
         <div
           className={`mt-1 text-[11px] ${
@@ -101,7 +109,6 @@ export default function ProductCard({ product, onAdd }) {
         </div>
       )}
 
-      {/* Tambah catatan */}
       {product.allowNotes && (
         <div className="mt-2">
           <div className="flex items-center justify-between">
@@ -114,7 +121,7 @@ export default function ProductCard({ product, onAdd }) {
                   : "border-cream-300 text-cocoa-800/50 hover:border-accent-400"
               }`}
             >
-              <FiPlus size={14} />
+              +
             </button>
           </div>
           {notesOpen && (
@@ -129,7 +136,6 @@ export default function ProductCard({ product, onAdd }) {
         </div>
       )}
 
-      {/* Chip varian */}
       {(product.variantGroups || []).map((group) => (
         <div key={group.id} className="mt-3">
           <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-cocoa-800/35">

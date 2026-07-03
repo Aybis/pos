@@ -2,9 +2,13 @@
 
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { formatRupiah, formatDateTime } from "@/lib/format";
+import { Transaction, TransactionItem } from "@/types";
 
-// Struk — dipakai di modal sukses pembayaran & riwayat transaksi.
-export default function Receipt({ trx }) {
+interface ReceiptProps {
+  trx: Transaction;
+}
+
+export default function Receipt({ trx }: ReceiptProps) {
   const settings = useSettingsStore((s) => s.settings);
 
   return (
@@ -68,11 +72,11 @@ export default function Receipt({ trx }) {
         <>
           <div className="flex justify-between">
             <span>Dibayar</span>
-            <span>{formatRupiah(trx.paidAmount)}</span>
+            <span>{formatRupiah(trx.paidAmount || 0)}</span>
           </div>
           <div className="flex justify-between">
             <span>Kembali</span>
-            <span>{formatRupiah(trx.change)}</span>
+            <span>{formatRupiah(trx.change || 0)}</span>
           </div>
         </>
       )}

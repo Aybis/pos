@@ -2,11 +2,29 @@
 
 import { useState } from "react";
 import { uid } from "@/lib/format";
+import { Category, Product, VariantGroup } from "@/types";
 
-// Form tambah/edit produk — termasuk editor grup varian dinamis,
-// sehingga produk apa pun (makanan, snack per-kilo, minuman) bisa dimodelkan.
-export default function ProductFormModal({ product, categories, onSave, onClose }) {
-  const [form, setForm] = useState(
+interface ProductFormModalProps {
+  product: Product | null;
+  categories: Category[];
+  onSave: (data: Partial<Product>) => void;
+  onClose: () => void;
+}
+
+type FormProduct = Partial<Product> & {
+  name: string;
+  categoryId: string;
+  basePrice: number | string;
+  emoji: string;
+  trackStock: boolean;
+  stock: number | string;
+  allowNotes: boolean;
+  notesHint?: string;
+  variantGroups: VariantGroup[];
+};
+
+export default function ProductFormModal({ product, categories, onSave, onClose }: ProductFormModalProps) {
+  const [form, setForm] = useState<FormProduct>(
     product || {
       name: "",
       categoryId: categories[0]?.id || "",
@@ -20,11 +38,10 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
     }
   );
 
-  function set(field, value) {
+  function set(field: string, value: any) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  // ---- Editor grup varian ----
   function addGroup() {
     set("variantGroups", [
       ...form.variantGroups,
@@ -37,37 +54,37 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
       },
     ]);
   }
-  function updateGroup(gid, data) {
+  function updateGroup(gid: string, data: Partial<VariantGroup>) {
     set(
       "variantGroups",
       form.variantGroups.map((g) => (g.id === gid ? { ...g, ...data } : g))
     );
   }
-  function removeGroup(gid) {
+  function removeGroup(gid: string) {
     set("variantGroups", form.variantGroups.filter((g) => g.id !== gid));
   }
-  function addOption(gid) {
+  function addOption(gid: string) {
     updateGroup(gid, {
       options: [
-        ...form.variantGroups.find((g) => g.id === gid).options,
+        ...form.variantGroups.find((g) => g.id === gid)!.options,
         { id: uid("vo-"), name: "", priceDelta: 0 },
       ],
     });
   }
-  function updateOption(gid, oid, data) {
-    const g = form.variantGroups.find((x) => x.id === gid);
+  function updateOption(gid: string, oid: string, data: Partial<{ name: string; priceDelta: number }>) {
+    const g = form.variantGroups.find((x) => x.id === gid)!;
     updateGroup(gid, {
       options: g.options.map((o) => (o.id === oid ? { ...o, ...data } : o)),
     });
   }
-  function removeOption(gid, oid) {
-    const g = form.variantGroups.find((x) => x.id === gid);
+  function removeOption(gid: string, oid: string) {
+    const g = form.variantGroups.find((x) => x.id === gid)!;
     updateGroup(gid, { options: g.options.filter((o) => o.id !== oid) });
   }
 
   function submit() {
     if (!form.name.trim() || !form.categoryId) return;
-    const cleaned = {
+    const cleaned: Partial<Product> = {
       ...form,
       basePrice: Number(form.basePrice) || 0,
       stock: Number(form.stock) || 0,
@@ -100,10 +117,7 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
           <div className="text-lg font-bold">
             {product ? "Edit Produk" : "Tambah Produk"}
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-cream-100"
-          >
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-cream-100">
             ✕
           </button>
         </div>
@@ -198,7 +212,6 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
           </div>
         </div>
 
-        {/* Varian */}
         <div className="mt-6">
           <div className="flex items-center justify-between">
             <div className="text-sm font-bold">Grup Varian</div>
@@ -226,11 +239,11 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                 />
                 <select
                   value={g.type}
-                  onChange={(e) => updateGroup(g.id, { type: e.target.value })}
+                  onChange={(e) => updateGroup(g.id, { type: e.target.value as "single" | "multi" })}
                   className={inputCls + " w-auto"}
                 >
                   <option value="single">Pilih satu</option>
-                  <option value="multiple">Boleh banyak</option>
+                  <option value="multi">Boleh banyak</option>
                 </select>
                 <label className="flex items-center gap-1.5 text-xs font-medium">
                   <input
@@ -264,9 +277,9 @@ export default function ProductFormModal({ product, categories, onSave, onClose 
                     <input
                       type="number"
                       value={o.priceDelta}
-                      onChange={(e) =>
-                        updateOption(g.id, o.id, { priceDelta: e.target.value })
-                      }
+                        onChange={(e) =>
+                          updateOption(g.id, o.id, { priceDelta: Number(e.target.value) })
+                        }
                       placeholder="+Harga"
                       className={inputCls + " w-28"}
                     />

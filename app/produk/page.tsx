@@ -5,6 +5,7 @@ import { useProductStore } from "@/store/useProductStore";
 import { useUI } from "@/context/UIContext";
 import { formatRupiah } from "@/lib/format";
 import ProductFormModal from "@/components/ProductFormModal";
+import { Product, Category } from "@/types";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -32,7 +33,7 @@ export default function ProdukPage() {
   const toggleActive = useProductStore((s) => s.toggleActive);
   const adjustStock = useProductStore((s) => s.adjustStock);
 
-  const [modal, setModal] = useState(null); // null | "new" | product
+  const [modal, setModal] = useState<Product | null | "new">(null);
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [filter, setFilter] = useState("all");
@@ -74,11 +75,11 @@ export default function ProdukPage() {
 
   if (!hydrated) return null;
 
-  function saveProduct(data) {
+  function saveProduct(data: Partial<Product>) {
     if (modal === "new") {
       addProduct(data);
       showToast("Produk ditambahkan ✨");
-    } else {
+    } else if (modal) {
       updateProduct(modal.id, data);
       showToast("Produk diperbarui");
     }
@@ -98,7 +99,6 @@ export default function ProdukPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl px-6 py-4 pb-10">
-        {/* Statistik mini */}
         <div className="anim-fade-up grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Total Produk", value: stat.total },
@@ -127,7 +127,6 @@ export default function ProdukPage() {
           ))}
         </div>
 
-        {/* Toolbar */}
         <div
           className="anim-fade-up mt-5 flex flex-wrap items-center gap-2"
           style={{ animationDelay: "150ms" }}
@@ -192,7 +191,6 @@ export default function ProdukPage() {
           </div>
         </div>
 
-        {/* Panel kategori (collapsible) */}
         {showCategories && (
           <section className="anim-scale-in mt-4 rounded-2xl bg-white p-5 shadow-card">
             <div className="text-sm font-bold">Kelola Kategori</div>
@@ -261,7 +259,6 @@ export default function ProdukPage() {
           </section>
         )}
 
-        {/* Daftar produk */}
         <section className="mt-4 space-y-3">
           {list.length === 0 && (
             <div className="anim-fade-up rounded-2xl bg-white p-10 text-center shadow-card">
@@ -323,7 +320,7 @@ export default function ProdukPage() {
                     <input
                       type="number"
                       value={p.stock}
-                      onChange={(e) => adjustStock(p.id, e.target.value)}
+                      onChange={(e) => adjustStock(p.id, Number(e.target.value))}
                       className={`w-20 rounded-lg border px-2 py-1.5 text-center outline-none transition focus:border-accent-400 ${
                         p.stock <= 5
                           ? "border-red-300 bg-red-50 text-red-600"
@@ -333,7 +330,6 @@ export default function ProdukPage() {
                   </label>
                 )}
 
-                {/* Toggle aktif */}
                 <button
                   onClick={() => {
                     toggleActive(p.id);
@@ -386,7 +382,7 @@ export default function ProdukPage() {
 
         {modal && (
           <ProductFormModal
-            product={modal === "new" ? null : modal}
+            product={modal === "new" ? null : modal as Product}
             categories={categories}
             onSave={saveProduct}
             onClose={() => setModal(null)}
@@ -397,7 +393,14 @@ export default function ProdukPage() {
   );
 }
 
-function IconBtn({ children, title, danger, onClick }) {
+interface IconBtnProps {
+  children: React.ReactNode;
+  title: string;
+  danger?: boolean;
+  onClick: () => void;
+}
+
+function IconBtn({ children, title, danger, onClick }: IconBtnProps) {
   return (
     <button
       onClick={onClick}

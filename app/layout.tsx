@@ -14,7 +14,7 @@ export const metadata = {
   description: "Sistem kasir dinamis untuk UMKM, kafe, dan warung",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={montserrat.variable}>
       <body className="font-sans">

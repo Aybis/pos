@@ -4,14 +4,31 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { seedCategories, seedProducts } from "@/lib/seed";
 import { uid } from "@/lib/format";
+import { Category, Product } from "@/types";
 
-export const useProductStore = create(
+interface ProductState {
+  categories: Category[];
+  products: Product[];
+  addCategory: (data: { name: string; icon: string }) => void;
+  updateCategory: (id: string, data: Partial<Category>) => void;
+  deleteCategory: (id: string) => void;
+  addProduct: (data: Partial<Product>) => void;
+  updateProduct: (id: string, data: Partial<Product>) => void;
+  deleteProduct: (id: string) => void;
+  toggleActive: (id: string) => void;
+  duplicateProduct: (id: string) => void;
+  adjustStock: (id: string, newStock: number) => void;
+  consumeStock: (items: { productId: string; qty: number }[]) => void;
+  restoreStock: (items: { productId: string; qty: number }[]) => void;
+  resetToSeed: () => void;
+}
+
+export const useProductStore = create<ProductState>()(
   persist(
     (set, get) => ({
       categories: seedCategories,
       products: seedProducts,
 
-      // ---- Kategori ----
       addCategory: (data) =>
         set((s) => ({
           categories: [...s.categories, { id: uid("cat-"), icon: "🏷️", ...data }],
@@ -26,7 +43,6 @@ export const useProductStore = create(
           products: s.products.filter((p) => p.categoryId !== id),
         })),
 
-      // ---- Produk ----
       addProduct: (data) =>
         set((s) => ({
           products: [
@@ -39,7 +55,7 @@ export const useProductStore = create(
               allowNotes: true,
               variantGroups: [],
               ...data,
-            },
+            } as Product,
           ],
         })),
       updateProduct: (id, data) =>
@@ -48,7 +64,6 @@ export const useProductStore = create(
         })),
       deleteProduct: (id) =>
         set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
-      // Aktif/nonaktif tanpa hapus (ala "arsip" di Odoo)
       toggleActive: (id) =>
         set((s) => ({
           products: s.products.map((p) =>
@@ -72,14 +87,12 @@ export const useProductStore = create(
           return { products };
         }),
 
-      // ---- Stok ----
       adjustStock: (id, newStock) =>
         set((s) => ({
           products: s.products.map((p) =>
             p.id === id ? { ...p, stock: Math.max(0, Number(newStock) || 0) } : p
           ),
         })),
-      // Kurangi stok berdasar item transaksi
       consumeStock: (items) =>
         set((s) => ({
           products: s.products.map((p) => {
@@ -91,7 +104,6 @@ export const useProductStore = create(
           }),
         })),
 
-      // Kembalikan stok saat transaksi di-refund
       restoreStock: (items) =>
         set((s) => ({
           products: s.products.map((p) => {

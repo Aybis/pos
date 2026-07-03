@@ -40,7 +40,7 @@ export default function LoginPage() {
   function submit() {
     login({
       name: name.trim() || (role === "admin" ? "Admin" : "Kasir"),
-      role,
+      role: role as "admin" | "pegawai",
     });
     router.replace("/");
   }

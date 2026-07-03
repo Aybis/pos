@@ -1,19 +1,28 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { ToastType } from "@/types";
 
-// UIContext — state antarmuka global (toast & hidrasi localStorage).
-// Dipakai lewat useContext sesuai kebutuhan lintas halaman.
-const UIContext = createContext(null);
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
 
-export function UIProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
+interface UIContextValue {
+  showToast: (message: string, type?: ToastType) => void;
+  hydrated: boolean;
+}
+
+const UIContext = createContext<UIContextValue | null>(null);
+
+export function UIProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
-  // Hindari mismatch SSR vs localStorage: render data store setelah mount.
   useEffect(() => setHydrated(true), []);
 
-  const showToast = useCallback((message, type = "success") => {
+  const showToast = useCallback((message: string, type: ToastType = "success") => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, message, type }]);
     setTimeout(() => {
@@ -24,7 +33,6 @@ export function UIProvider({ children }) {
   return (
     <UIContext.Provider value={{ showToast, hydrated }}>
       {children}
-      {/* Toast container */}
       <div className="fixed bottom-4 left-1/2 z-[100] flex -translate-x-1/2 flex-col gap-2 print:hidden">
         {toasts.map((t) => (
           <div
@@ -41,7 +49,7 @@ export function UIProvider({ children }) {
   );
 }
 
-export function useUI() {
+export function useUI(): UIContextValue {
   const ctx = useContext(UIContext);
   if (!ctx) throw new Error("useUI harus dipakai di dalam UIProvider");
   return ctx;

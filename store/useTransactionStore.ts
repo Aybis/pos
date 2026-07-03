@@ -2,8 +2,17 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { Transaction } from "@/types";
 
-export const useTransactionStore = create(
+interface TransactionState {
+  transactions: Transaction[];
+  counter: number;
+  addTransaction: (trx: Omit<Transaction, "id" | "number" | "createdAt">) => Transaction;
+  refundTransaction: (id: string) => void;
+  clearAll: () => void;
+}
+
+export const useTransactionStore = create<TransactionState>()(
   persist(
     (set, get) => ({
       transactions: [],
@@ -11,7 +20,7 @@ export const useTransactionStore = create(
 
       addTransaction: (trx) => {
         const number = get().counter + 1;
-        const record = {
+        const record: Transaction = {
           ...trx,
           id: "TRX-" + number,
           number,
@@ -24,7 +33,6 @@ export const useTransactionStore = create(
         return record;
       },
 
-      // Refund: status berubah, data asli tetap tersimpan (jejak audit)
       refundTransaction: (id) =>
         set((s) => ({
           transactions: s.transactions.map((t) =>

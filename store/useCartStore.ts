@@ -2,9 +2,9 @@
 
 import { create } from "zustand";
 import { uid } from "@/lib/format";
+import { CartItem } from "@/types";
 
-// Item dengan produk + kombinasi varian + catatan yang sama digabung qty-nya.
-function sameLine(a, b) {
+function sameLine(a: CartItem, b: Partial<CartItem>): boolean {
   return (
     a.productId === b.productId &&
     a.variantText === b.variantText &&
@@ -12,7 +12,18 @@ function sameLine(a, b) {
   );
 }
 
-export const useCartStore = create((set, get) => ({
+interface CartState {
+  items: CartItem[];
+  discount: number;
+  addItem: (line: Omit<CartItem, "key">) => void;
+  setQty: (key: string, qty: number) => void;
+  removeItem: (key: string) => void;
+  setDiscount: (value: number) => void;
+  clear: () => void;
+  subtotal: () => number;
+}
+
+export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   discount: 0,
 

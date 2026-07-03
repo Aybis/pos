@@ -1,14 +1,12 @@
-// Data awal (seed) — bisa diubah sepenuhnya lewat halaman Kelola Produk.
-// Struktur ini dinamis: kategori, produk, dan grup varian bebas ditambah
-// sehingga sistem bisa dipakai untuk jenis UMKM apa pun.
+import { Category, Product, VariantGroup, VariantOption, Settings } from "@/types";
 
-export const seedCategories = [
+export const seedCategories: Category[] = [
   { id: "cat-makanan", name: "Makanan", icon: "🍲" },
   { id: "cat-snack", name: "Snack", icon: "🍘" },
   { id: "cat-minuman", name: "Minuman", icon: "☕" },
 ];
 
-export const seedProducts = [
+export const seedProducts: Product[] = [
   {
     id: "p-soto-ayam",
     name: "Soto Ayam",
@@ -88,8 +86,6 @@ export const seedProducts = [
     allowNotes: false,
     variantGroups: [
       {
-        // Multi-select: pilih >1 jenis = "Campur" otomatis.
-        // Harga = dasar + jumlah delta jenis terpilih (Teri premium +3rb).
         id: "vg-peyek-jenis",
         name: "Jenis (boleh pilih lebih dari 1)",
         type: "multi",
@@ -207,7 +203,7 @@ export const seedProducts = [
   },
 ];
 
-export const seedSettings = {
+export const seedSettings: Settings = {
   storeName: "Kafe Ama",
   storeAddress: "Jl. Contoh No. 1",
   storePhone: "0812-0000-0000",

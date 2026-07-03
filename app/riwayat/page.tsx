@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useUI } from "@/context/UIContext";
 import { formatRupiah, formatDateTime } from "@/lib/format";
 import Receipt from "@/components/Receipt";
+import { Transaction } from "@/types";
 
 const RANGES = [
   { id: "all", label: "Semua" },
@@ -22,7 +23,7 @@ export default function RiwayatPage() {
   const restoreStock = useProductStore((s) => s.restoreStock);
   const user = useAuthStore((s) => s.user);
 
-  const [detail, setDetail] = useState(null);
+  const [detail, setDetail] = useState<Transaction | null>(null);
   const [range, setRange] = useState("all");
   const [method, setMethod] = useState("all");
   const [query, setQuery] = useState("");
@@ -61,7 +62,7 @@ export default function RiwayatPage() {
 
   if (!hydrated) return null;
 
-  function handleRefund(trx) {
+  function handleRefund(trx: Transaction) {
     if (
       !confirm(
         `Refund ${trx.id} senilai ${formatRupiah(trx.total)}?\nStok item akan dikembalikan.`
@@ -80,7 +81,6 @@ export default function RiwayatPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-4xl px-6 py-4 pb-10">
-        {/* Toolbar filter */}
         <div className="anim-fade-up flex flex-wrap items-center gap-2">
           <div className="flex gap-1.5">
             {RANGES.map((r) => (
@@ -117,7 +117,6 @@ export default function RiwayatPage() {
           />
         </div>
 
-        {/* Ringkasan filter */}
         <div
           className="anim-fade-up mt-4 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-2xl bg-white px-5 py-3.5 text-sm shadow-card"
           style={{ animationDelay: "80ms" }}
@@ -137,7 +136,6 @@ export default function RiwayatPage() {
           )}
         </div>
 
-        {/* Daftar */}
         <div className="mt-4 space-y-3">
           {filtered.length === 0 && (
             <div className="anim-fade-up rounded-2xl bg-white p-10 text-center text-cocoa-800/40 shadow-card">
@@ -188,7 +186,6 @@ export default function RiwayatPage() {
           })}
         </div>
 
-        {/* Detail modal */}
         {detail && (
           <div
             className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center bg-cocoa-900/50 p-4 print:bg-transparent"
@@ -201,8 +198,7 @@ export default function RiwayatPage() {
               {detail.status === "REFUND" && (
                 <div className="mb-3 rounded-xl bg-red-50 px-4 py-2.5 text-center text-sm font-bold text-red-600 print:hidden">
                   ↩️ Transaksi ini sudah di-refund
-                  {detail.refundedAt &&
-                    ` · ${formatDateTime(detail.refundedAt)}`}
+                  {detail.refundedAt && ` · ${formatDateTime(detail.refundedAt)}`}
                 </div>
               )}
               <div className="rounded-2xl border border-cream-200">

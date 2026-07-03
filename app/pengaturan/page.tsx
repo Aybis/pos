@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useProductStore } from "@/store/useProductStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
@@ -8,18 +10,37 @@ import { useUI } from "@/context/UIContext";
 
 const BACKUP_KEYS = ["pos-products", "pos-transactions", "pos-settings"];
 
+interface FormSettings {
+  storeName: string;
+  storeAddress: string;
+  storePhone: string;
+  taxPercent: string;
+  receiptFooter: string;
+}
+
 export default function PengaturanPage() {
   const { hydrated, showToast } = useUI();
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
   const resetToSeed = useProductStore((s) => s.resetToSeed);
   const clearTransactions = useTransactionStore((s) => s.clearAll);
-  const fileRef = useRef(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [form, setForm] = useState(settings);
+  const [form, setForm] = useState<FormSettings>({
+    storeName: settings.storeName,
+    storeAddress: settings.storeAddress,
+    storePhone: settings.storePhone,
+    taxPercent: String(settings.taxPercent),
+    receiptFooter: settings.receiptFooter,
+  });
   useEffect(() => {
-    if (hydrated) setForm(settings);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (hydrated) setForm({
+      storeName: settings.storeName,
+      storeAddress: settings.storeAddress,
+      storePhone: settings.storePhone,
+      taxPercent: String(settings.taxPercent),
+      receiptFooter: settings.receiptFooter,
+    });
   }, [hydrated]);
 
   if (!hydrated) return null;
@@ -28,13 +49,12 @@ export default function PengaturanPage() {
     "w-full rounded-xl border border-cream-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-accent-400";
 
   function save() {
-    updateSettings({ ...form, taxPercent: Number(form.taxPercent) || 0 });
+    updateSettings({ storeName: form.storeName, storeAddress: form.storeAddress, storePhone: form.storePhone, taxPercent: Number(form.taxPercent) || 0, receiptFooter: form.receiptFooter });
     showToast("Pengaturan disimpan");
   }
 
-  // ---- Backup & Restore (ala ekspor data Odoo, versi sederhana) ----
   function exportBackup() {
-    const data = { exportedAt: new Date().toISOString(), version: 1 };
+    const data: Record<string, any> = { exportedAt: new Date().toISOString(), version: 1 };
     for (const key of BACKUP_KEYS) {
       data[key] = JSON.parse(localStorage.getItem(key) || "null");
     }
@@ -49,13 +69,13 @@ export default function PengaturanPage() {
     showToast("Backup terunduh 💾");
   }
 
-  function importBackup(e) {
+  function importBackup(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(reader.result);
+        const data = JSON.parse(reader.result as string);
         const hasData = BACKUP_KEYS.some((k) => data[k]);
         if (!hasData) throw new Error("bukan file backup");
         if (
@@ -84,7 +104,6 @@ export default function PengaturanPage() {
           warung, toko apa pun).
         </p>
 
-        {/* Identitas toko */}
         <div
           className="anim-fade-up mt-4 space-y-4 rounded-2xl bg-white p-6 shadow-card"
           style={{ animationDelay: "60ms" }}
@@ -159,7 +178,6 @@ export default function PengaturanPage() {
           </button>
         </div>
 
-        {/* Backup & Restore */}
         <div
           className="anim-fade-up mt-5 rounded-2xl bg-white p-6 shadow-card"
           style={{ animationDelay: "120ms" }}
@@ -192,7 +210,6 @@ export default function PengaturanPage() {
           </div>
         </div>
 
-        {/* Zona berbahaya */}
         <div
           className="anim-fade-up mt-5 rounded-2xl border border-red-200 bg-red-50 p-6"
           style={{ animationDelay: "180ms" }}

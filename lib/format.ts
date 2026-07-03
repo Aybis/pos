@@ -1,9 +1,11 @@
-export function formatRupiah(value) {
+import { Product, VariantGroup, Transaction } from "@/types";
+
+export function formatRupiah(value: number): string {
   const n = Number(value) || 0;
   return "Rp " + n.toLocaleString("id-ID");
 }
 
-export function formatDateTime(iso) {
+export function formatDateTime(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString("id-ID", {
     day: "2-digit",
@@ -14,7 +16,7 @@ export function formatDateTime(iso) {
   });
 }
 
-export function formatDate(iso) {
+export function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -23,7 +25,7 @@ export function formatDate(iso) {
   });
 }
 
-export function uid(prefix = "") {
+export function uid(prefix: string = ""): string {
   return (
     prefix +
     Date.now().toString(36) +
@@ -31,8 +33,10 @@ export function uid(prefix = "") {
   );
 }
 
-// Hitung harga satuan item = harga dasar + delta semua opsi terpilih
-export function calcUnitPrice(product, selectedOptions) {
+export function calcUnitPrice(
+  product: Product,
+  selectedOptions: Record<string, string | string[]>
+): number {
   let price = Number(product.basePrice) || 0;
   for (const group of product.variantGroups || []) {
     const chosen = selectedOptions?.[group.id];
@@ -46,10 +50,11 @@ export function calcUnitPrice(product, selectedOptions) {
   return price;
 }
 
-// Label ringkas varian terpilih, mis. "Pakai Nasi · Pedas".
-// Grup multi dengan >1 pilihan ditampilkan "Campur (A + B)".
-export function variantLabel(product, selectedOptions) {
-  const parts = [];
+export function variantLabel(
+  product: Product,
+  selectedOptions: Record<string, string | string[]>
+): string {
+  const parts: string[] = [];
   for (const group of product.variantGroups || []) {
     const chosen = selectedOptions?.[group.id];
     if (!chosen) continue;

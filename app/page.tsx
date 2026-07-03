@@ -11,6 +11,7 @@ import { formatRupiah } from "@/lib/format";
 import ProductCard from "@/components/ProductCard";
 import OrderPanel from "@/components/OrderPanel";
 import PaymentModal from "@/components/PaymentModal";
+import { Product, CartItem } from "@/types";
 
 export default function KasirPage() {
   const { showToast } = useUI();
@@ -25,12 +26,17 @@ export default function KasirPage() {
   const search = useUIStore((s) => s.search);
   const setSearch = useUIStore((s) => s.setSearch);
 
-  const [payTotals, setPayTotals] = useState(null);
+  const [payTotals, setPayTotals] = useState<{
+    subtotal: number;
+    discount: number;
+    tax: number;
+    total: number;
+  } | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      if (p.active === false) return false; // produk nonaktif tidak tampil di kasir
+      if (p.active === false) return false;
       const okCat = activeCategory === "all" || p.categoryId === activeCategory;
       const okQuery =
         !search || p.name.toLowerCase().includes(search.toLowerCase());
@@ -41,18 +47,31 @@ export default function KasirPage() {
   const itemCount = items.reduce((s, it) => s + it.qty, 0);
   const cartTotal = items.reduce((s, it) => s + it.unitPrice * it.qty, 0);
 
-  function handleAdd(line) {
-    addItem(line);
+  function handleAdd(line: {
+    productId: string;
+    name: string;
+    emoji: string;
+    qty: number;
+    unitPrice: number;
+    selectedOptions: Record<string, string | string[]>;
+    variantText: string;
+    notes: string;
+  }) {
+    addItem(line as CartItem);
     showToast(`${line.name} masuk pesanan`);
   }
 
-  function handleConfirmPayment(payment) {
+  function handleConfirmPayment(payment: {
+    paymentMethod: string;
+    paidAmount?: number;
+    change?: number;
+  }) {
     const record = useTransactionStore.getState().addTransaction({
       items: items.map(({ key, ...rest }) => rest),
-      subtotal: payTotals.subtotal,
-      discount: payTotals.discount,
-      tax: payTotals.tax,
-      total: payTotals.total,
+      subtotal: payTotals?.subtotal || 0,
+      discount: payTotals?.discount || 0,
+      tax: payTotals?.tax || 0,
+      total: payTotals?.total || 0,
       ...payment,
       status: "LUNAS",
     });
@@ -69,9 +88,7 @@ export default function KasirPage() {
 
   return (
     <div className="flex h-full">
-      {/* Area produk */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Search + kategori (mobile) */}
         <div className="px-5 sm:hidden">
           <input
             value={search}
@@ -106,14 +123,12 @@ export default function KasirPage() {
           ))}
         </div>
 
-        {/* Grid produk */}
         <div className="flex-1 overflow-y-auto px-5 pb-28 pt-3 md:px-8 lg:pb-8">
           {filtered.length === 0 ? (
             <div className="mt-16 text-center text-cocoa-800/40">
               Tidak ada produk di kategori ini.
             </div>
           ) : (
-            {/* auto-rows-fr + h-full → semua kartu sama tinggi & lebar */}
             <div className="grid auto-rows-fr grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filtered.map((p, i) => (
                 <div
@@ -129,14 +144,12 @@ export default function KasirPage() {
         </div>
       </div>
 
-      {/* Panel pesanan desktop — kartu melayang seperti referensi */}
       <aside className="hidden w-[360px] shrink-0 p-4 pl-0 lg:block print:hidden">
         <div className="flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-cream-200 bg-white shadow-card">
           <OrderPanel onPay={(totals) => setPayTotals(totals)} />
         </div>
       </aside>
 
-      {/* Tombol keranjang mobile */}
       {itemCount > 0 && !cartOpen && (
         <button
           onClick={() => setCartOpen(true)}
@@ -149,7 +162,6 @@ export default function KasirPage() {
         </button>
       )}
 
-      {/* Drawer pesanan mobile */}
       {cartOpen && (
         <div className="fixed inset-0 z-50 bg-cocoa-900/50 lg:hidden print:hidden">
           <div className="absolute inset-x-0 bottom-0 top-14 overflow-hidden rounded-t-3xl bg-white">
