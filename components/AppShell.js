@@ -1,0 +1,290 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useUIStore } from "@/store/useUIStore";
+import { useProductStore } from "@/store/useProductStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { useUI } from "@/context/UIContext";
+
+const PAGES = {
+  "/produk": { title: "Produk", adminOnly: true },
+  "/riwayat": { title: "Riwayat Transaksi", adminOnly: false },
+  "/laporan": { title: "Dashboard", adminOnly: true },
+  "/pengaturan": { title: "Pengaturan", adminOnly: true },
+};
+
+// Ikon topbar kanan (seperti referensi: struk, grafik, gear + profil kasir)
+const NAV_ICONS = [
+  { href: "/riwayat", icon: "🧾", label: "Riwayat", adminOnly: false },
+  { href: "/produk", icon: "📦", label: "Produk", adminOnly: true },
+  { href: "/laporan", icon: "📈", label: "Dashboard", adminOnly: true },
+  { href: "/pengaturan", icon: "⚙️", label: "Pengaturan", adminOnly: true },
+];
+
+function CategorySidebar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const categories = useProductStore((s) => s.categories);
+  const activeCategory = useUIStore((s) => s.activeCategory);
+  const setActiveCategory = useUIStore((s) => s.setActiveCategory);
+
+  function pick(id) {
+    setActiveCategory(id);
+    if (pathname !== "/") router.push("/");
+  }
+
+  return (
+    <aside className="hidden w-20 shrink-0 flex-col items-center bg-cocoa-800 py-6 md:flex print:hidden">
+      {/* Hamburger */}
+      <div className="space-y-1.5">
+        <div className="h-0.5 w-6 rounded bg-white/80" />
+        <div className="h-0.5 w-4 rounded bg-white/50" />
+      </div>
+
+      {/* Kategori vertikal (bawah ke atas, seperti referensi) */}
+      <nav className="mt-4 flex w-full flex-1 flex-col-reverse items-center gap-2 overflow-y-auto py-4">
+        <button
+          onClick={() => pick("all")}
+          className={`vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
+            activeCategory === "all" && pathname === "/"
+              ? "font-bold text-white"
+              : "text-white/40 hover:text-white/80"
+          }`}
+        >
+          Semua
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => pick(c.id)}
+            className={`vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
+              activeCategory === c.id && pathname === "/"
+                ? "font-bold text-white"
+                : "text-white/40 hover:text-white/80"
+            }`}
+          >
+            {c.name}
+          </button>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function Topbar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const categories = useProductStore((s) => s.categories);
+  const activeCategory = useUIStore((s) => s.activeCategory);
+  const search = useUIStore((s) => s.search);
+  const setSearch = useUIStore((s) => s.setSearch);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const isKasir = pathname === "/";
+  const title = isKasir
+    ? activeCategory === "all"
+      ? "Semua"
+      : categories.find((c) => c.id === activeCategory)?.name || "Menu"
+    : PAGES[pathname]?.title || "POS";
+
+  const isAdmin = user?.role === "admin";
+
+  return (
+    <header className="flex items-center gap-3 px-5 pb-2 pt-6 md:px-8 print:hidden">
+      <h1 className="shrink-0 text-2xl font-extrabold md:text-3xl">{title}</h1>
+
+      {isKasir && (
+        <div className="relative mx-2 hidden max-w-xl flex-1 sm:block md:mx-6">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cocoa-800/30">
+            🔍
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari produk, makanan, dll"
+            className="w-full rounded-full border border-cream-200 bg-white py-3 pl-11 pr-4 text-sm shadow-card outline-none placeholder:text-cocoa-800/30 focus:border-accent-400"
+          />
+        </div>
+      )}
+
+      <div className="ml-auto flex items-center gap-2 md:gap-3">
+        {isKasir ? (
+          NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              title={n.label}
+              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white text-lg shadow-card transition hover:shadow-panel sm:flex"
+            >
+              {n.icon}
+            </Link>
+          ))
+        ) : (
+          <Link
+            href="/"
+            className="hidden h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold shadow-card transition hover:shadow-panel sm:flex"
+          >
+            ← Kasir
+          </Link>
+        )}
+
+        {/* Profil */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-2 pr-3 shadow-card"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-500 text-sm font-bold text-white">
+              {user?.name?.[0]?.toUpperCase() || "?"}
+            </span>
+            <span className="hidden text-sm font-semibold sm:block">
+              {user?.role === "admin" ? "Admin" : "Kasir"}
+            </span>
+            <span className="text-xs text-cocoa-800/40">▾</span>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl bg-white p-2 shadow-panel">
+              <div className="px-3 py-2 text-xs text-cocoa-800/50">
+                Masuk sebagai{" "}
+                <span className="font-semibold text-cocoa-800">
+                  {user?.name}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  logout();
+                  router.replace("/login");
+                }}
+                className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50"
+              >
+                Keluar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MobileNav() {
+  const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "admin";
+  const items = [
+    { href: "/", label: "Kasir", icon: "🧾" },
+    ...NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => ({
+      href: n.href,
+      label: n.label,
+      icon: n.icon,
+    })),
+  ];
+  return (
+    <nav className="flex justify-around border-t border-cream-200 bg-white py-1.5 md:hidden print:hidden">
+      {items.map((m) => (
+        <Link
+          key={m.href}
+          href={m.href}
+          className={`flex flex-col items-center rounded-lg px-3 py-1 text-[11px] ${
+            pathname === m.href
+              ? "font-bold text-accent-600"
+              : "text-cocoa-800/50"
+          }`}
+        >
+          <span className="text-lg">{m.icon}</span>
+          {m.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+export default function AppShell({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { hydrated } = useUI();
+  const user = useAuthStore((s) => s.user);
+  const storeName = useSettingsStore((s) => s.settings.storeName);
+
+  // Wajib login
+  useEffect(() => {
+    if (hydrated && !user && pathname !== "/login") {
+      router.replace("/login");
+    }
+  }, [hydrated, user, pathname, router]);
+
+  if (pathname === "/login") return children;
+
+  if (!hydrated || !user) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-6">
+        {/* Logo mark yang "bernafas" */}
+        <div className="pos-loader-mark flex h-16 w-16 items-center justify-center rounded-3xl bg-cocoa-800 text-2xl shadow-panel">
+          🧾
+        </div>
+        {/* Tiga titik memantul halus */}
+        <div className="pos-loader" aria-label="Memuat">
+          <span />
+          <span />
+          <span />
+        </div>
+        <p className="pos-loader-text text-sm font-medium tracking-wide text-cocoa-800/40">
+          Memuat POS...
+        </p>
+      </div>
+    );
+  }
+
+  // Halaman khusus admin
+  const page = PAGES[pathname];
+  const blocked = page?.adminOnly && user.role !== "admin";
+
+  return (
+    <div className="relative min-h-screen overflow-hidden p-3 md:p-6 lg:p-8 print:p-0">
+      {/* Bentuk dekoratif background (seperti referensi) */}
+      <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-[36rem] rotate-[18deg] rounded-[4rem] bg-peach-300/50 print:hidden" />
+      <div className="pointer-events-none absolute -bottom-32 -right-20 h-96 w-[32rem] -rotate-12 rounded-[4rem] bg-peach-300/40 print:hidden" />
+      <div className="pointer-events-none absolute bottom-6 right-8 hidden gap-2 lg:flex print:hidden">
+        <div className="h-14 w-3 rotate-[30deg] rounded-full bg-accent-500/70" />
+        <div className="h-14 w-3 rotate-[30deg] rounded-full bg-accent-500/70" />
+      </div>
+
+      {/* Container aplikasi melayang */}
+      <div className="relative mx-auto flex h-[calc(100vh-1.5rem)] max-w-[1600px] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-panel md:h-[calc(100vh-3rem)] md:rounded-[2.5rem] lg:h-[calc(100vh-4rem)] print:h-auto print:overflow-visible print:rounded-none print:shadow-none">
+        <div className="flex min-h-0 flex-1">
+          <CategorySidebar />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <Topbar />
+            <div key={pathname} className="anim-fade-in min-h-0 flex-1 overflow-hidden">
+              {blocked ? (
+                <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                  <div className="text-5xl">🔒</div>
+                  <div className="mt-3 text-lg font-bold">Khusus Admin</div>
+                  <p className="mt-1 max-w-sm text-sm text-cocoa-800/50">
+                    Halaman ini hanya bisa diakses oleh Admin {storeName}.
+                    Silakan masuk ulang sebagai Admin.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-5 rounded-full bg-cocoa-800 px-6 py-3 text-sm font-semibold text-white"
+                  >
+                    Kembali ke Kasir
+                  </Link>
+                </div>
+              ) : (
+                children
+              )}
+            </div>
+          </div>
+        </div>
+        <MobileNav />
+      </div>
+    </div>
+  );
+}

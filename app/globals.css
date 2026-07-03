@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-peach-200 text-cocoa-800 antialiased;
+}
+
+/* Teks vertikal untuk sidebar kategori (seperti referensi) */
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* ===== Sistem animasi ringan (tanpa library) =====
+   Pakai: className="anim-fade-up" + style={{animationDelay:`${i*40}ms`}} */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes growUp {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes growRight {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.anim-fade-up {
+  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-fade-in {
+  animation: fadeIn 0.3s ease both;
+}
+.anim-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-grow-up {
+  animation: growUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: bottom;
+}
+.anim-grow-right {
+  animation: growRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left;
+}
+
+/* ===== Loader halus (layar "Memuat POS...") =====
+   Semua animasi pakai transform/opacity saja → berjalan di GPU,
+   tidak memicu reflow, jadi tetap mulus walau thread JS sibuk. */
+@keyframes loaderBreath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+@keyframes loaderDot {
+  0%,
+  100% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.35;
+  }
+  35% {
+    transform: translateY(-7px) scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.35;
+  }
+}
+@keyframes loaderTextPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.pos-loader-mark {
+  animation: loaderBreath 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.pos-loader {
+  display: flex;
+  gap: 0.5rem;
+}
+.pos-loader span {
+  @apply bg-accent-500;
+  height: 0.625rem;
+  width: 0.625rem;
+  border-radius: 9999px;
+  animation: loaderDot 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite both;
+  will-change: transform, opacity;
+}
+.pos-loader span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.pos-loader span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+.pos-loader-text {
+  animation: loaderTextPulse 2.4s ease-in-out infinite;
+}
+
+/* Hormati preferensi aksesibilitas */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-fade-in,
+  .anim-scale-in,
+  .anim-grow-up,
+  .anim-grow-right,
+  .pos-loader-mark,
+  .pos-loader span,
+  .pos-loader-text {
+    animation: none;
+  }
+}
+
+/* Scrollbar halus */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-cream-300;
+}
+
+/* Mode cetak struk: sembunyikan semua kecuali area struk */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible;
+  }
+  #receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+  }
+}
