@@ -37,7 +37,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`rounded-full px-5 py-2.5 text-sm font-medium text-white shadow-panel ${
+            className={`anim-toast rounded-full px-5 py-2.5 text-sm font-medium text-white shadow-panel ${
               t.type === "error" ? "bg-red-600" : "bg-cocoa-800"
             }`}
           >

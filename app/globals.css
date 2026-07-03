@@ -143,6 +143,201 @@ body {
   animation: loaderTextPulse 2.4s ease-in-out infinite;
 }
 
+/* ===== Animasi Tombol & Interaksi ===== */
+@keyframes btnPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+@keyframes navSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes navSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(238, 138, 47, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(238, 138, 47, 0);
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cardLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+.anim-btn-press {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+}
+.anim-btn-press:active {
+  animation: btnPress 0.2s ease;
+}
+.anim-btn-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.anim-btn-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 31, 31, 0.12);
+}
+.anim-btn-hover:active {
+  transform: translateY(0) scale(0.97);
+}
+.anim-dropdown {
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
+}
+.anim-nav-item {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.anim-nav-item:hover {
+  transform: translateY(-1px);
+}
+.anim-nav-slide {
+  animation: navSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-bounce-in {
+  animation: bounceIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-shake {
+  animation: shake 0.4s ease;
+}
+.anim-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+.anim-float {
+  animation: float 3s ease-in-out infinite;
+}
+.anim-toast {
+  animation: toastSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-backdrop {
+  animation: backdropFadeIn 0.2s ease both;
+}
+.anim-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.anim-card-hover:hover {
+  animation: cardLift 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Hormati preferensi aksesibilitas */
 @media (prefers-reduced-motion: reduce) {
   .anim-fade-up,
@@ -150,10 +345,23 @@ body {
   .anim-scale-in,
   .anim-grow-up,
   .anim-grow-right,
+  .anim-btn-press,
+  .anim-btn-hover,
+  .anim-dropdown,
+  .anim-nav-item,
+  .anim-nav-slide,
+  .anim-bounce-in,
+  .anim-shake,
+  .anim-pulse-glow,
+  .anim-float,
+  .anim-toast,
+  .anim-backdrop,
+  .anim-card-hover,
   .pos-loader-mark,
   .pos-loader span,
   .pos-loader-text {
-    animation: none;
+    animation: none !important;
+    transition: none !important;
   }
 }
 

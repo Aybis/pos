@@ -81,7 +81,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }: Pay
 
   return (
     <div
-      className="anim-fade-in fixed inset-0 z-50 flex items-end justify-center bg-cocoa-900/50 sm:items-center sm:p-4 print:bg-transparent"
+      className="anim-backdrop fixed inset-0 z-50 flex items-end justify-center bg-cocoa-900/50 sm:items-center sm:p-4 print:bg-transparent"
       onClick={step === "success" || step === "processing" ? undefined : onClose}
     >
       <div
@@ -103,11 +103,12 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }: Pay
               </span>
             </div>
             <div className="mt-5 space-y-3">
-              {METHODS.map((m) => (
+              {METHODS.map((m, i) => (
                 <button
                   key={m.id}
                   onClick={() => pickMethod(m.id)}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-cream-200 p-4 text-left transition hover:border-accent-400 hover:bg-cream-50"
+                  className="anim-btn-hover flex w-full items-center gap-4 rounded-2xl border border-cream-200 p-4 text-left"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <span className="text-2xl">{m.icon}</span>
                   <span>
@@ -151,7 +152,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }: Pay
                   <button
                     key={v}
                     onClick={() => setCash(String(v))}
-                    className="rounded-lg bg-cream-100 px-3 py-1.5 text-sm font-medium hover:bg-cream-200"
+                    className="anim-btn-press rounded-lg bg-cream-100 px-3 py-1.5 text-sm font-medium hover:bg-cream-200"
                   >
                     {v === totals.total ? "Uang Pas" : formatRupiah(v)}
                   </button>
@@ -171,7 +172,7 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }: Pay
             <button
               onClick={() => startProcessing("Tunai", cashNum, change)}
               disabled={change < 0 || !cash}
-              className="mt-5 w-full rounded-xl bg-cocoa-800 py-3.5 font-semibold text-white hover:bg-cocoa-700 disabled:opacity-40"
+              className="anim-btn-press mt-5 w-full rounded-xl bg-cocoa-800 py-3.5 font-semibold text-white hover:bg-cocoa-700 disabled:opacity-40"
             >
               Konfirmasi Pembayaran
             </button>
@@ -232,10 +233,10 @@ export default function PaymentModal({ totals, onConfirm, onDone, onClose }: Pay
               <Receipt trx={trx as any} />
             </div>
             <div className="mt-4 flex gap-3 print:hidden">
-              <button onClick={() => window.print()} className="flex-1 rounded-xl border border-cocoa-800 py-3 font-semibold hover:bg-cream-50">
+              <button onClick={() => window.print()} className="anim-btn-press flex-1 rounded-xl border border-cocoa-800 py-3 font-semibold hover:bg-cream-50">
                 🖨️ Cetak Struk
               </button>
-              <button onClick={onDone} className="flex-1 rounded-xl bg-cocoa-800 py-3 font-semibold text-white hover:bg-cocoa-700">
+              <button onClick={onDone} className="anim-btn-press flex-1 rounded-xl bg-cocoa-800 py-3 font-semibold text-white hover:bg-cocoa-700">
                 Transaksi Baru
               </button>
             </div>

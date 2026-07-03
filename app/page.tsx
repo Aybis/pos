@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { useProductStore } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -11,6 +11,8 @@ import { formatRupiah } from "@/lib/format";
 import ProductCard from "@/components/ProductCard";
 import OrderPanel from "@/components/OrderPanel";
 import PaymentModal from "@/components/PaymentModal";
+import TransactionModal from "@/components/TransactionModal";
+import AddToCartModal from "@/components/AddToCartModal";
 import { Product, CartItem } from "@/types";
 
 export default function KasirPage() {
@@ -33,6 +35,7 @@ export default function KasirPage() {
     total: number;
   } | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [addToCartProduct, setAddToCartProduct] = useState<Product | null>(null);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -47,7 +50,11 @@ export default function KasirPage() {
   const itemCount = items.reduce((s, it) => s + it.qty, 0);
   const cartTotal = items.reduce((s, it) => s + it.unitPrice * it.qty, 0);
 
-  function handleAdd(line: {
+  const handleAddToCart = useCallback((product: Product) => {
+    setAddToCartProduct(product);
+  }, []);
+
+  const handleAdd = useCallback((line: {
     productId: string;
     name: string;
     emoji: string;
@@ -56,10 +63,10 @@ export default function KasirPage() {
     selectedOptions: Record<string, string | string[]>;
     variantText: string;
     notes: string;
-  }) {
+  }) => {
     addItem(line as CartItem);
     showToast(`${line.name} masuk pesanan`);
-  }
+  }, [addItem, showToast]);
 
   function handleConfirmPayment(payment: {
     paymentMethod: string;
@@ -100,7 +107,7 @@ export default function KasirPage() {
         <div className="flex gap-2 overflow-x-auto px-5 py-3 md:hidden">
           <button
             onClick={() => setActiveCategory("all")}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
+            className={`anim-btn-press whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
               activeCategory === "all"
                 ? "bg-cocoa-800 text-white"
                 : "bg-cream-50 text-cocoa-800/60"
@@ -108,15 +115,16 @@ export default function KasirPage() {
           >
             Semua
           </button>
-          {categories.map((c) => (
+          {categories.map((c, i) => (
             <button
               key={c.id}
               onClick={() => setActiveCategory(c.id)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
+              className={`anim-btn-press whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
                 activeCategory === c.id
                   ? "bg-cocoa-800 text-white"
                   : "bg-cream-50 text-cocoa-800/60"
               }`}
+              style={{ animationDelay: `${i * 40}ms` }}
             >
               {c.icon} {c.name}
             </button>
@@ -136,7 +144,7 @@ export default function KasirPage() {
                   className="anim-fade-up h-full"
                   style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
                 >
-                  <ProductCard product={p} onAdd={handleAdd} />
+                  <ProductCard product={p} onAdd={handleAddToCart} />
                 </div>
               ))}
             </div>
@@ -153,7 +161,7 @@ export default function KasirPage() {
       {itemCount > 0 && !cartOpen && (
         <button
           onClick={() => setCartOpen(true)}
-          className="fixed bottom-24 left-6 right-6 z-40 flex items-center justify-between rounded-2xl bg-cocoa-800 px-5 py-4 text-white shadow-panel lg:hidden print:hidden"
+          className="anim-btn-hover fixed bottom-24 left-6 right-6 z-40 flex items-center justify-between rounded-2xl bg-cocoa-800 px-5 py-4 text-white shadow-panel lg:hidden print:hidden"
         >
           <span className="flex items-center gap-2 font-semibold">
             <FiShoppingCart size={17} /> {itemCount} item
@@ -163,14 +171,10 @@ export default function KasirPage() {
       )}
 
       {cartOpen && (
-        <div className="fixed inset-0 z-50 bg-cocoa-900/50 lg:hidden print:hidden">
-          <div className="absolute inset-x-0 bottom-0 top-14 overflow-hidden rounded-t-3xl bg-white">
-            <OrderPanel
-              onPay={(totals) => setPayTotals(totals)}
-              onClose={() => setCartOpen(false)}
-            />
-          </div>
-        </div>
+        <TransactionModal
+          onPay={(totals) => setPayTotals(totals)}
+          onClose={() => setCartOpen(false)}
+        />
       )}
 
       {payTotals && (
@@ -179,6 +183,26 @@ export default function KasirPage() {
           onConfirm={handleConfirmPayment}
           onDone={handleDone}
           onClose={() => setPayTotals(null)}
+        />
+      )}
+
+      {addToCartProduct && (
+        <AddToCartModal
+          product={addToCartProduct}
+          onAdd={(qty, selectedOptions, notes, variantText, unitPrice) => {
+            handleAdd({
+              productId: addToCartProduct.id,
+              name: addToCartProduct.name,
+              emoji: addToCartProduct.emoji,
+              qty,
+              unitPrice,
+              selectedOptions,
+              variantText,
+              notes,
+            });
+            setAddToCartProduct(null);
+          }}
+          onClose={() => setAddToCartProduct(null)}
         />
       )}
     </div>

@@ -11,11 +11,11 @@ const ROLES = [
     id: "admin",
     label: "Admin",
     icon: "👨‍💼",
-    desc: "Akses penuh: kasir, produk, stok, laporan, pengaturan",
+    desc: "Akses penuh: produk, stok, laporan, pengaturan",
   },
   {
-    id: "pegawai",
-    label: "Pegawai",
+    id: "kasir",
+    label: "Kasir",
     icon: "🧑‍🍳",
     desc: "Akses kasir & riwayat transaksi",
   },
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    if (hydrated && user) router.replace("/");
+    if (hydrated && user) router.replace(user.role === "admin" ? "/laporan" : "/");
   }, [hydrated, user, router]);
 
   if (!hydrated) return null;
@@ -40,9 +40,9 @@ export default function LoginPage() {
   function submit() {
     login({
       name: name.trim() || (role === "admin" ? "Admin" : "Kasir"),
-      role: role as "admin" | "pegawai",
+      role: role as "admin" | "kasir",
     });
-    router.replace("/");
+    router.replace(role === "admin" ? "/laporan" : "/");
   }
 
   return (
@@ -107,7 +107,7 @@ export default function LoginPage() {
           onClick={submit}
           className="mt-6 w-full rounded-2xl bg-cocoa-800 py-4 font-bold text-white transition hover:bg-cocoa-700"
         >
-          Masuk sebagai {role === "admin" ? "Admin" : "Pegawai"}
+          Masuk sebagai {role === "admin" ? "Admin" : "Kasir"}
         </button>
       </div>
     </div>

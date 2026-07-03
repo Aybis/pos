@@ -81,7 +81,7 @@ export interface Settings {
 
 export interface User {
   name: string;
-  role: "admin" | "pegawai";
+  role: "admin" | "kasir";
 }
 
 export type ToastType = "success" | "error";

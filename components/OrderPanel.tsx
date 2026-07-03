@@ -84,21 +84,21 @@ export default function OrderPanel({ onPay, onClose }: OrderPanelProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => setQty(it.key, it.qty - 1)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
-                >
-                  <FiMinus size={14} />
-                </button>
-                <span className="w-5 text-center text-sm font-bold">
-                  {it.qty}
-                </span>
-                <button
-                  onClick={() => setQty(it.key, it.qty + 1)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
-                >
-                  <FiPlus size={14} />
-                </button>
+              <button
+                onClick={() => setQty(it.key, it.qty - 1)}
+                className="anim-btn-press flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
+              >
+                <FiMinus size={14} />
+              </button>
+              <span className="w-5 text-center text-sm font-bold">
+                {it.qty}
+              </span>
+              <button
+                onClick={() => setQty(it.key, it.qty + 1)}
+                className="anim-btn-press flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
+              >
+                <FiPlus size={14} />
+              </button>
               </div>
             </div>
             {it.notes && (
@@ -144,7 +144,7 @@ export default function OrderPanel({ onPay, onClose }: OrderPanelProps) {
         <button
           onClick={() => onPay({ subtotal, discount, tax, total })}
           disabled={items.length === 0}
-          className="mt-3 w-full rounded-2xl bg-cocoa-800 py-4 font-bold text-white transition hover:bg-cocoa-700 disabled:opacity-40"
+          className="anim-btn-press mt-3 w-full rounded-2xl bg-cocoa-800 py-4 font-bold text-white transition hover:bg-cocoa-700 disabled:opacity-40"
         >
           Bayar · {formatRupiah(total)}
         </button>

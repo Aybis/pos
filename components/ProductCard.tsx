@@ -1,90 +1,32 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { FiShoppingCart } from "react-icons/fi";
-import { calcUnitPrice, variantLabel, formatRupiah } from "@/lib/format";
+import { useState } from "react";
+import { FiPlus } from "react-icons/fi";
+import { formatRupiah } from "@/lib/format";
 import { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
-  onAdd: (line: {
-    productId: string;
-    name: string;
-    emoji: string;
-    qty: number;
-    unitPrice: number;
-    selectedOptions: Record<string, string | string[]>;
-    variantText: string;
-    notes: string;
-  }) => void;
+  onAdd: (product: Product) => void;
 }
 
 export default function ProductCard({ product, onAdd }: ProductCardProps) {
   const out = product.trackStock && (product.stock || 0) <= 0;
+  const [justAdded, setJustAdded] = useState(false);
 
-  const [selected, setSelected] = useState<Record<string, string | string[]>>(() => {
-    const init: Record<string, string | string[]> = {};
-    for (const g of product.variantGroups || []) {
-      if (g.options.length === 0) continue;
-      if (g.type === "single") init[g.id] = g.options[0].id;
-      else if (g.required) init[g.id] = [g.options[0].id];
-    }
-    return init;
-  });
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [notes, setNotes] = useState("");
-
-  const unitPrice = useMemo(
-    () => calcUnitPrice(product, selected),
-    [product, selected]
-  );
-
-  function toggle(group: Product["variantGroups"][0], optId: string) {
-    setSelected((prev) => {
-      if (group.type === "single") return { ...prev, [group.id]: optId };
-      const curArr: string[] = Array.isArray(prev[group.id]) ? prev[group.id] as string[] : [];
-      const next = curArr.includes(optId)
-        ? curArr.filter((x) => x !== optId)
-        : [...curArr, optId];
-      if (group.required && next.length === 0) return prev;
-      return { ...prev, [group.id]: next };
-    });
-  }
-
-  function add() {
+  function handleClick() {
     if (out) return;
-    onAdd({
-      productId: product.id,
-      name: product.name,
-      emoji: product.emoji,
-      qty: 1,
-      unitPrice,
-      selectedOptions: selected,
-      variantText: variantLabel(product, selected),
-      notes: notes.trim(),
-    });
-    setNotes("");
-    setNotesOpen(false);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 600);
+    onAdd(product);
   }
 
   return (
-    <div
-      className={`flex h-full flex-col rounded-[1.5rem] bg-white p-4 shadow-card transition hover:shadow-panel ${
-        out ? "opacity-50" : ""
-      }`}
-    >
+    <div className="anim-card-hover flex h-full flex-col rounded-[1.5rem] bg-white p-4 shadow-card">
       <div className="relative">
         <div className="flex h-32 items-center justify-center rounded-2xl bg-gradient-to-br from-cream-50 to-peach-100 text-6xl">
           {product.emoji || "🍽️"}
         </div>
-        <button
-          onClick={add}
-          disabled={out}
-          title="Tambah ke pesanan"
-          className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500 text-white shadow-card transition hover:scale-110 disabled:hover:scale-100"
-        >
-          <FiShoppingCart size={18} />
-        </button>
         {out && (
           <span className="absolute left-2 top-2 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-bold text-red-600">
             Habis
@@ -95,7 +37,7 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
       <div className="mt-3 flex items-baseline justify-between gap-2">
         <span className="truncate font-bold">{product.name}</span>
         <span className="whitespace-nowrap font-bold">
-          {formatRupiah(unitPrice)}
+          {formatRupiah(product.basePrice)}
         </span>
       </div>
 
@@ -109,67 +51,18 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
         </div>
       )}
 
-      {product.allowNotes && (
-        <div className="mt-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-cocoa-800/50">Tambah catatan</span>
-            <button
-              onClick={() => setNotesOpen((v) => !v)}
-              className={`flex h-7 w-7 items-center justify-center rounded-full border transition ${
-                notesOpen || notes
-                  ? "border-accent-500 bg-accent-500 text-white"
-                  : "border-cream-300 text-cocoa-800/50 hover:border-accent-400"
-              }`}
-            >
-              +
-            </button>
-          </div>
-          {notesOpen && (
-            <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={product.notesHint || "Contoh: tanpa daun bawang"}
-              autoFocus
-              className="mt-2 w-full rounded-xl border border-cream-200 bg-cream-50 px-3 py-2 text-xs outline-none focus:border-accent-400"
-            />
-          )}
-        </div>
-      )}
-
-      {(product.variantGroups || []).map((group) => (
-        <div key={group.id} className="mt-3">
-          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-cocoa-800/35">
-            {group.name}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {group.options.map((opt) => {
-              const cur = selected[group.id];
-              const active =
-                group.type === "single"
-                  ? cur === opt.id
-                  : Array.isArray(cur) && cur.includes(opt.id);
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => toggle(group, opt.id)}
-                  className={`rounded-xl px-3 py-2 text-xs transition ${
-                    active
-                      ? "bg-peach-100 font-bold text-cocoa-800 ring-1 ring-accent-500"
-                      : "bg-cream-50 text-cocoa-800/60 hover:bg-cream-100"
-                  }`}
-                >
-                  {opt.name}
-                  {opt.priceDelta > 0 && (
-                    <span className="ml-1 opacity-50">
-                      +{(opt.priceDelta / 1000).toLocaleString("id-ID")}rb
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      <div className="mt-auto pt-3">
+        <button
+          onClick={handleClick}
+          disabled={out}
+          title="Tambah ke pesanan"
+          className={`anim-btn-press flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white shadow-card transition ${
+            justAdded ? "bg-green-500 anim-bounce-in" : "bg-accent-500 hover:bg-accent-600"
+          } disabled:opacity-40`}
+        >
+          <FiPlus size={16} /> Tambah
+        </button>
+      </div>
     </div>
   );
 }

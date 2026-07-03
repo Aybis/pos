@@ -22,11 +22,12 @@ import { useProductStore } from "@/store/useProductStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useUI } from "@/context/UIContext";
 
-const PAGES: Record<string, { title: string; adminOnly: boolean }> = {
-  "/produk": { title: "Produk", adminOnly: true },
-  "/riwayat": { title: "Riwayat Transaksi", adminOnly: false },
-  "/laporan": { title: "Dashboard", adminOnly: true },
-  "/pengaturan": { title: "Pengaturan", adminOnly: true },
+const PAGES: Record<string, { title: string; adminOnly: boolean; kasirOnly: boolean }> = {
+  "/": { title: "Kasir", adminOnly: false, kasirOnly: true },
+  "/produk": { title: "Produk", adminOnly: true, kasirOnly: false },
+  "/riwayat": { title: "Riwayat Transaksi", adminOnly: false, kasirOnly: false },
+  "/laporan": { title: "Dashboard", adminOnly: true, kasirOnly: false },
+  "/pengaturan": { title: "Pengaturan", adminOnly: true, kasirOnly: false },
 };
 
 interface NavIcon {
@@ -34,6 +35,7 @@ interface NavIcon {
   Icon: React.ComponentType<{ size: number }>;
   label: string;
   adminOnly: boolean;
+  kasirOnly?: boolean;
 }
 
 const NAV_ICONS: NavIcon[] = [
@@ -66,11 +68,11 @@ function CategorySidebar({ collapsed, onToggle }: CategorySidebarProps) {
         collapsed ? "w-14" : "w-20"
       }`}
     >
-      <button
-        onClick={onToggle}
-        title={collapsed ? "Perlebar menu" : "Perkecil menu"}
-        className="flex h-9 w-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
-      >
+        <button
+          onClick={onToggle}
+          title={collapsed ? "Perlebar menu" : "Perkecil menu"}
+          className="anim-btn-press anim-btn-hover flex h-9 w-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+        >
         {collapsed ? <FiChevronsRight size={18} /> : <FiMenu size={18} />}
       </button>
 
@@ -81,7 +83,7 @@ function CategorySidebar({ collapsed, onToggle }: CategorySidebarProps) {
       >
         <button
           onClick={() => pick("all")}
-          className={`vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
+          className={`anim-nav-item vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
             activeCategory === "all" && pathname === "/"
               ? "font-bold text-white"
               : "text-white/40 hover:text-white/80"
@@ -93,7 +95,7 @@ function CategorySidebar({ collapsed, onToggle }: CategorySidebarProps) {
           <button
             key={c.id}
             onClick={() => pick(c.id)}
-            className={`vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
+            className={`anim-nav-item vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
               activeCategory === c.id && pathname === "/"
                 ? "font-bold text-white"
                 : "text-white/40 hover:text-white/80"
@@ -119,13 +121,14 @@ function Topbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isKasir = pathname === "/";
+  const isAdmin = user?.role === "admin";
+  const homeHref = isAdmin ? "/laporan" : "/";
+  const homeLabel = isAdmin ? "Dashboard" : "Kasir";
   const title = isKasir
     ? activeCategory === "all"
       ? "Semua"
       : categories.find((c) => c.id === activeCategory)?.name || "Menu"
     : PAGES[pathname]?.title || "POS";
-
-  const isAdmin = user?.role === "admin";
 
   return (
     <header className="flex items-center gap-3 px-5 pb-2 pt-6 md:px-8 print:hidden">
@@ -146,30 +149,30 @@ function Topbar() {
       )}
 
       <div className="ml-auto flex items-center gap-2 md:gap-3">
-        {isKasir ? (
-          NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              title={n.label}
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white text-cocoa-800/70 shadow-card transition hover:shadow-panel sm:flex"
-            >
-              <n.Icon size={18} />
-            </Link>
-          ))
-        ) : (
+        {NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n, i) => (
           <Link
-            href="/"
-            className="hidden h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold shadow-card transition hover:shadow-panel sm:flex"
+            key={n.href}
+            href={n.href}
+            title={n.label}
+            className="anim-nav-item anim-btn-hover hidden h-11 w-11 items-center justify-center rounded-full bg-white text-cocoa-800/70 shadow-card sm:flex"
+            style={{ animationDelay: `${i * 60}ms` }}
           >
-            <FiArrowLeft size={15} /> Kasir
+            <n.Icon size={18} />
+          </Link>
+        ))}
+        {!isKasir && (
+          <Link
+            href={homeHref}
+            className="anim-nav-item anim-btn-hover hidden h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold shadow-card sm:flex"
+          >
+            <FiArrowLeft size={15} /> {homeLabel}
           </Link>
         )}
 
         <div className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-2 pr-3 shadow-card"
+            className="anim-btn-press flex items-center gap-2 rounded-full bg-white py-1.5 pl-2 pr-3 shadow-card transition hover:shadow-panel"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-500 text-sm font-bold text-white">
               {user?.name?.[0]?.toUpperCase() || "?"}
@@ -182,7 +185,7 @@ function Topbar() {
             </span>
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl bg-white p-2 shadow-panel">
+            <div className="anim-dropdown absolute right-0 top-12 z-50 w-44 rounded-2xl bg-white p-2 shadow-panel">
               <div className="px-3 py-2 text-xs text-cocoa-800/50">
                 Masuk sebagai{" "}
                 <span className="font-semibold text-cocoa-800">
@@ -195,7 +198,7 @@ function Topbar() {
                   logout();
                   router.replace("/login");
                 }}
-                className="w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50"
+                className="anim-btn-press w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50"
               >
                 Keluar
               </button>
@@ -212,8 +215,10 @@ function MobileNav() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
   const items: { href: string; label: string; Icon: React.ComponentType<{ size: number }> }[] = [
-    { href: "/", label: "Kasir", Icon: FiShoppingBag },
-    ...NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => ({
+    ...(isAdmin
+      ? [{ href: "/laporan", label: "Dashboard", Icon: FiBarChart2 }]
+      : [{ href: "/", label: "Kasir", Icon: FiShoppingBag }]),
+    ...NAV_ICONS.filter((n) => (isAdmin || !n.adminOnly) && n.href !== "/laporan").map((n) => ({
       href: n.href,
       label: n.label,
       Icon: n.Icon,
@@ -221,15 +226,16 @@ function MobileNav() {
   ];
   return (
     <nav className="flex justify-around border-t border-cream-200 bg-white py-1.5 md:hidden print:hidden">
-      {items.map((m) => (
+      {items.map((m, i) => (
         <Link
           key={m.href}
           href={m.href}
-          className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[11px] ${
+          className={`anim-nav-item flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[11px] ${
             pathname === m.href
               ? "font-bold text-accent-600"
               : "text-cocoa-800/50"
           }`}
+          style={{ animationDelay: `${i * 50}ms` }}
         >
           <m.Icon size={18} />
           {m.label}
@@ -278,7 +284,12 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   const page = PAGES[pathname];
-  const blocked = page?.adminOnly && user.role !== "admin";
+  const isAdmin = user?.role === "admin";
+  const homeHref = isAdmin ? "/laporan" : "/";
+  const homeLabel = isAdmin ? "Dashboard" : "Kasir";
+  const blocked =
+    (page?.adminOnly && user.role !== "admin") ||
+    (page?.kasirOnly && user.role !== "kasir");
 
   return (
     <div className="relative min-h-screen overflow-hidden p-3 md:p-6 lg:p-8 print:p-0">
@@ -303,16 +314,18 @@ export default function AppShell({ children }: AppShellProps) {
                   <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-cream-100 text-cocoa-800/60">
                     <FiLock size={28} />
                   </div>
-                  <div className="mt-3 text-lg font-bold">Khusus Admin</div>
+                  <div className="mt-3 text-lg font-bold">
+                    {page?.kasirOnly ? "Khusus Kasir" : "Khusus Admin"}
+                  </div>
                   <p className="mt-1 max-w-sm text-sm text-cocoa-800/50">
-                    Halaman ini hanya bisa diakses oleh Admin {storeName}.
-                    Silakan masuk ulang sebagai Admin.
+                    Halaman ini hanya bisa diakses oleh {page?.kasirOnly ? "Kasir" : "Admin"} {storeName}.
+                    Silakan masuk ulang sebagai {page?.kasirOnly ? "Kasir" : "Admin"}.
                   </p>
                   <Link
-                    href="/"
+                    href={homeHref}
                     className="mt-5 rounded-full bg-cocoa-800 px-6 py-3 text-sm font-semibold text-white"
                   >
-                    Kembali ke Kasir
+                    Kembali ke {homeLabel}
                   </Link>
                 </div>
               ) : (
