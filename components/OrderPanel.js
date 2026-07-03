@@ -1,5 +1,6 @@
 "use client";
 
+import { FiX, FiShoppingCart, FiEdit3, FiMinus, FiPlus } from "react-icons/fi";
 import { useCartStore } from "@/store/useCartStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
@@ -37,7 +38,7 @@ export default function OrderPanel({ onPay, onClose }) {
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-cream-100 lg:hidden"
             >
-              ✕
+              <FiX size={16} />
             </button>
           )}
         </div>
@@ -47,7 +48,7 @@ export default function OrderPanel({ onPay, onClose }) {
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {items.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-cocoa-800/40">
-            <div className="text-4xl">🛒</div>
+            <FiShoppingCart size={36} className="opacity-60" />
             <p className="mt-2">
               Belum ada pesanan.
               <br />
@@ -77,7 +78,7 @@ export default function OrderPanel({ onPay, onClose }) {
                   onClick={() => setQty(it.key, it.qty - 1)}
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
                 >
-                  −
+                  <FiMinus size={14} />
                 </button>
                 <span className="w-5 text-center text-sm font-bold">
                   {it.qty}
@@ -86,13 +87,13 @@ export default function OrderPanel({ onPay, onClose }) {
                   onClick={() => setQty(it.key, it.qty + 1)}
                   className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-accent-500 text-accent-500 transition hover:bg-accent-500 hover:text-white"
                 >
-                  +
+                  <FiPlus size={14} />
                 </button>
               </div>
             </div>
             {it.notes && (
-              <div className="ml-[60px] mt-1.5 rounded-lg bg-peach-100 px-3 py-1.5 text-xs text-cocoa-800/70">
-                📝 {it.notes}
+              <div className="ml-[60px] mt-1.5 flex items-center gap-1.5 rounded-lg bg-peach-100 px-3 py-1.5 text-xs text-cocoa-800/70">
+                <FiEdit3 size={12} className="shrink-0" /> {it.notes}
               </div>
             )}
           </div>

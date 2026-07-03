@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { FiShoppingCart } from "react-icons/fi";
 import { useProductStore } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useTransactionStore } from "@/store/useTransactionStore";
@@ -75,7 +76,7 @@ export default function KasirPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Cari produk..."
+            placeholder="Cari produk..."
             className="w-full rounded-full border border-cream-200 bg-white px-4 py-2.5 text-sm shadow-card outline-none focus:border-accent-400"
           />
         </div>
@@ -112,11 +113,12 @@ export default function KasirPage() {
               Tidak ada produk di kategori ini.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {/* auto-rows-fr + h-full → semua kartu sama tinggi & lebar */}
+            <div className="grid auto-rows-fr grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {filtered.map((p, i) => (
                 <div
                   key={p.id}
-                  className="anim-fade-up"
+                  className="anim-fade-up h-full"
                   style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
                 >
                   <ProductCard product={p} onAdd={handleAdd} />
@@ -140,7 +142,9 @@ export default function KasirPage() {
           onClick={() => setCartOpen(true)}
           className="fixed bottom-24 left-6 right-6 z-40 flex items-center justify-between rounded-2xl bg-cocoa-800 px-5 py-4 text-white shadow-panel lg:hidden print:hidden"
         >
-          <span className="font-semibold">🛒 {itemCount} item</span>
+          <span className="flex items-center gap-2 font-semibold">
+            <FiShoppingCart size={17} /> {itemCount} item
+          </span>
           <span className="font-bold">{formatRupiah(cartTotal)}</span>
         </button>
       )}

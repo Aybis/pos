@@ -3,6 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  FiMenu,
+  FiChevronsRight,
+  FiChevronDown,
+  FiClock,
+  FiBox,
+  FiBarChart2,
+  FiSettings,
+  FiSearch,
+  FiLock,
+  FiArrowLeft,
+  FiShoppingBag,
+} from "react-icons/fi";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useProductStore } from "@/store/useProductStore";
@@ -16,15 +29,15 @@ const PAGES = {
   "/pengaturan": { title: "Pengaturan", adminOnly: true },
 };
 
-// Ikon topbar kanan (seperti referensi: struk, grafik, gear + profil kasir)
+// Ikon topbar kanan (react-icons/fi — Feather, konsisten satu keluarga)
 const NAV_ICONS = [
-  { href: "/riwayat", icon: "🧾", label: "Riwayat", adminOnly: false },
-  { href: "/produk", icon: "📦", label: "Produk", adminOnly: true },
-  { href: "/laporan", icon: "📈", label: "Dashboard", adminOnly: true },
-  { href: "/pengaturan", icon: "⚙️", label: "Pengaturan", adminOnly: true },
+  { href: "/riwayat", Icon: FiClock, label: "Riwayat", adminOnly: false },
+  { href: "/produk", Icon: FiBox, label: "Produk", adminOnly: true },
+  { href: "/laporan", Icon: FiBarChart2, label: "Dashboard", adminOnly: true },
+  { href: "/pengaturan", Icon: FiSettings, label: "Pengaturan", adminOnly: true },
 ];
 
-function CategorySidebar() {
+function CategorySidebar({ collapsed, onToggle }) {
   const router = useRouter();
   const pathname = usePathname();
   const categories = useProductStore((s) => s.categories);
@@ -37,15 +50,26 @@ function CategorySidebar() {
   }
 
   return (
-    <aside className="hidden w-20 shrink-0 flex-col items-center bg-cocoa-800 py-6 md:flex print:hidden">
-      {/* Hamburger */}
-      <div className="space-y-1.5">
-        <div className="h-0.5 w-6 rounded bg-white/80" />
-        <div className="h-0.5 w-4 rounded bg-white/50" />
-      </div>
+    <aside
+      className={`hidden shrink-0 flex-col items-center bg-cocoa-800 py-6 transition-all duration-300 ease-out md:flex print:hidden ${
+        collapsed ? "w-14" : "w-20"
+      }`}
+    >
+      {/* Toggle minimize/expand */}
+      <button
+        onClick={onToggle}
+        title={collapsed ? "Perlebar menu" : "Perkecil menu"}
+        className="flex h-9 w-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+      >
+        {collapsed ? <FiChevronsRight size={18} /> : <FiMenu size={18} />}
+      </button>
 
-      {/* Kategori vertikal (bawah ke atas, seperti referensi) */}
-      <nav className="mt-4 flex w-full flex-1 flex-col-reverse items-center gap-2 overflow-y-auto py-4">
+      {/* Kategori vertikal — di tengah secara vertikal */}
+      <nav
+        className={`mt-4 flex w-full flex-1 flex-col-reverse items-center justify-center gap-2 overflow-y-auto py-4 transition-opacity duration-200 ${
+          collapsed ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
+      >
         <button
           onClick={() => pick("all")}
           className={`vertical-text rounded-full px-2 py-3 text-sm tracking-wide transition ${
@@ -101,7 +125,7 @@ function Topbar() {
       {isKasir && (
         <div className="relative mx-2 hidden max-w-xl flex-1 sm:block md:mx-6">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cocoa-800/30">
-            🔍
+            <FiSearch size={16} />
           </span>
           <input
             value={search}
@@ -119,17 +143,17 @@ function Topbar() {
               key={n.href}
               href={n.href}
               title={n.label}
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white text-lg shadow-card transition hover:shadow-panel sm:flex"
+              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white text-cocoa-800/70 shadow-card transition hover:shadow-panel sm:flex"
             >
-              {n.icon}
+              <n.Icon size={18} />
             </Link>
           ))
         ) : (
           <Link
             href="/"
-            className="hidden h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold shadow-card transition hover:shadow-panel sm:flex"
+            className="hidden h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold shadow-card transition hover:shadow-panel sm:flex"
           >
-            ← Kasir
+            <FiArrowLeft size={15} /> Kasir
           </Link>
         )}
 
@@ -145,7 +169,9 @@ function Topbar() {
             <span className="hidden text-sm font-semibold sm:block">
               {user?.role === "admin" ? "Admin" : "Kasir"}
             </span>
-            <span className="text-xs text-cocoa-800/40">▾</span>
+            <span className="text-cocoa-800/40">
+              <FiChevronDown size={14} />
+            </span>
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-12 z-50 w-44 rounded-2xl bg-white p-2 shadow-panel">
@@ -178,11 +204,11 @@ function MobileNav() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === "admin";
   const items = [
-    { href: "/", label: "Kasir", icon: "🧾" },
+    { href: "/", label: "Kasir", Icon: FiShoppingBag },
     ...NAV_ICONS.filter((n) => isAdmin || !n.adminOnly).map((n) => ({
       href: n.href,
       label: n.label,
-      icon: n.icon,
+      Icon: n.Icon,
     })),
   ];
   return (
@@ -191,13 +217,13 @@ function MobileNav() {
         <Link
           key={m.href}
           href={m.href}
-          className={`flex flex-col items-center rounded-lg px-3 py-1 text-[11px] ${
+          className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-[11px] ${
             pathname === m.href
               ? "font-bold text-accent-600"
               : "text-cocoa-800/50"
           }`}
         >
-          <span className="text-lg">{m.icon}</span>
+          <m.Icon size={18} />
           {m.label}
         </Link>
       ))}
@@ -211,6 +237,7 @@ export default function AppShell({ children }) {
   const { hydrated } = useUI();
   const user = useAuthStore((s) => s.user);
   const storeName = useSettingsStore((s) => s.settings.storeName);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Wajib login
   useEffect(() => {
@@ -258,13 +285,18 @@ export default function AppShell({ children }) {
       {/* Container aplikasi melayang */}
       <div className="relative mx-auto flex h-[calc(100vh-1.5rem)] max-w-[1600px] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-panel md:h-[calc(100vh-3rem)] md:rounded-[2.5rem] lg:h-[calc(100vh-4rem)] print:h-auto print:overflow-visible print:rounded-none print:shadow-none">
         <div className="flex min-h-0 flex-1">
-          <CategorySidebar />
+          <CategorySidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed((v) => !v)}
+          />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <Topbar />
             <div key={pathname} className="anim-fade-in min-h-0 flex-1 overflow-hidden">
               {blocked ? (
                 <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-                  <div className="text-5xl">🔒</div>
+                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-cream-100 text-cocoa-800/60">
+                    <FiLock size={28} />
+                  </div>
                   <div className="mt-3 text-lg font-bold">Khusus Admin</div>
                   <p className="mt-1 max-w-sm text-sm text-cocoa-800/50">
                     Halaman ini hanya bisa diakses oleh Admin {storeName}.

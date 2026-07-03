@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { FiShoppingCart, FiPlus } from "react-icons/fi";
 import { calcUnitPrice, variantLabel, formatRupiah } from "@/lib/format";
 
 // Kartu produk gaya referensi: area gambar + tombol keranjang oranye,
@@ -11,9 +12,10 @@ export default function ProductCard({ product, onAdd }) {
   const [selected, setSelected] = useState(() => {
     const init = {};
     for (const g of product.variantGroups || []) {
-      if (g.type === "single" && g.options.length > 0) {
-        init[g.id] = g.options[0].id;
-      }
+      if (g.options.length === 0) continue;
+      if (g.type === "single") init[g.id] = g.options[0].id;
+      // Grup multi wajib: mulai dengan opsi pertama terpilih
+      else if (g.required) init[g.id] = [g.options[0].id];
     }
     return init;
   });
@@ -29,12 +31,12 @@ export default function ProductCard({ product, onAdd }) {
     setSelected((prev) => {
       if (group.type === "single") return { ...prev, [group.id]: optId };
       const cur = Array.isArray(prev[group.id]) ? prev[group.id] : [];
-      return {
-        ...prev,
-        [group.id]: cur.includes(optId)
-          ? cur.filter((x) => x !== optId)
-          : [...cur, optId],
-      };
+      const next = cur.includes(optId)
+        ? cur.filter((x) => x !== optId)
+        : [...cur, optId];
+      // Grup wajib tidak boleh kosong
+      if (group.required && next.length === 0) return prev;
+      return { ...prev, [group.id]: next };
     });
   }
 
@@ -56,7 +58,7 @@ export default function ProductCard({ product, onAdd }) {
 
   return (
     <div
-      className={`flex flex-col rounded-[1.5rem] bg-white p-4 shadow-card transition hover:shadow-panel ${
+      className={`flex h-full flex-col rounded-[1.5rem] bg-white p-4 shadow-card transition hover:shadow-panel ${
         out ? "opacity-50" : ""
       }`}
     >
@@ -69,9 +71,9 @@ export default function ProductCard({ product, onAdd }) {
           onClick={add}
           disabled={out}
           title="Tambah ke pesanan"
-          className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500 text-lg text-white shadow-card transition hover:scale-110 disabled:hover:scale-100"
+          className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500 text-white shadow-card transition hover:scale-110 disabled:hover:scale-100"
         >
-          🛒
+          <FiShoppingCart size={18} />
         </button>
         {out && (
           <span className="absolute left-2 top-2 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-bold text-red-600">
@@ -106,13 +108,13 @@ export default function ProductCard({ product, onAdd }) {
             <span className="text-sm text-cocoa-800/50">Tambah catatan</span>
             <button
               onClick={() => setNotesOpen((v) => !v)}
-              className={`flex h-7 w-7 items-center justify-center rounded-full border text-sm transition ${
+              className={`flex h-7 w-7 items-center justify-center rounded-full border transition ${
                 notesOpen || notes
                   ? "border-accent-500 bg-accent-500 text-white"
                   : "border-cream-300 text-cocoa-800/50 hover:border-accent-400"
               }`}
             >
-              +
+              <FiPlus size={14} />
             </button>
           </div>
           {notesOpen && (
